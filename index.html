@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="iso-8859-1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/> 
+		<meta name="author" content="Valentin Schwind">  
+		
+		<link rel="stylesheet" href="_css/style.css" />  
+		<title>Statistical Decision Tree</title>	
+	</head>
+	<body class="transparent">    
+		<div class="container">
+			<div class="whiteBox rounded">
+				<div class="row text-start">
+					<h1 class=" text-start">Statistical Decision Tree</h1>  
+				</div>
+				<hr />
+				<div class="row">
+					<div id="zoom" class="magnify-wrapper">
+						<img src="decisiontree.png" id="main-img" width="100%" height="100%" />
+						<div id="large-img"></div>
+					</div>
+				</div>
+				<hr />
+				<div class="row">
+					<div class="col mb-2 "> 
+						Info graphics for students and people interested in inferential statistics and null hypothesis significance testing (NHST). Download <a href="decisiontree.pdf">PDF</a>, <a href="decisiontree.svg">SVG</a>, <a href="decisiontree.png">PNG</a>, <a href="decisiontree.jpg">JPG</a>, or contribute at <a href="https://github.com/valentin-schwind/statistics-decision-tree/">Github</a>.  
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<script>
+			document.getElementById('zoom').addEventListener('mousemove', function (e){
+				var original = document.getElementById("main-img");
+				var magnified = document.getElementById("large-img");
+				
+				style = magnified.style,
+				x = e.pageX - this.offsetLeft,
+				y = e.pageY - this.offsetTop,
+				
+				imgWidth = original.width,
+				imgHeight = original.height,
+				xperc = (x / imgWidth) * 100,
+				yperc = (y / imgHeight) * 100;
+				
+				if (x > 0.01 * imgWidth) {
+					xperc += 0.15 * xperc;
+				}
+				
+				if (y >= 0.01 * imgHeight) {
+					yperc += 0.15 * yperc;
+				}
+				
+				style.backgroundPositionX = xperc - 9 + "%"; 
+				style.backgroundPositionY = yperc - 9 + "%";
+				
+				style.left = x - 250 + "px";
+				style.top = y - 150 + "px";
+				},
+			false
+			);
+		</script>
+	</body>
+</html>

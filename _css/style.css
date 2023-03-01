@@ -1,0 +1,74 @@
+@font-face {
+    font-family: Roboto;
+    src: url(_fonts/roboto-v29-latin-ext_latin-regular.woff);
+}
+ 
+html, body{
+	background: url(../_img/bg.jpg) no-repeat center center fixed; 
+	font-family: Roboto, "Helvetica Neue", Arial,sans-serif !important;
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+	margin:0;
+    padding:0;
+	font-size: 14px;
+	width: 100%;
+    height: 100%;
+    display: table; 
+}
+
+.vertical-center {
+	min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
+	min-height: 100vh; /* These two lines are counted as one <img draggable="false" class="emoji" alt="🙂" src="https://s.w.org/images/core/emoji/72x72/1f642.png">       */
+	display: flex;
+	align-items: center;
+}
+
+.whiteBox { 
+    background: white;
+    box-shadow: 4px 4px 20px rgb(0 0 0 / 20%); 
+	margin: auto; 
+	padding: 1em; 
+	max-width: 1400px;
+} 
+
+h1, h2, h3, h4, h5 {
+	font-weight: 500;
+}
+
+.container{ 
+	display: table-cell; 
+    vertical-align: middle;
+}
+ 
+.magnify-wrapper {
+	position: relative;
+}
+.magnify-wrapper img {
+	max-height: inherit;
+}
+.magnify-wrapper #large-img {
+	background: url('../decisiontree.png')
+	no-repeat #fff;
+	width: 500px;
+	height: 300px;
+	box-shadow: 0 5px 10px -2px rgba(0, 0, 0, 0.3);
+	pointer-events: none;
+	position: absolute;
+	border: 5px solid #efefef;
+	z-index: 99;
+	border-radius: 5px 5px 5px 5px;
+	display: block;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+.magnify-wrapper:hover #large-img,
+.magnify-wrapper:active #large-img {
+	opacity: 1;
+}
+
+#main-img {
+	
+	aspect-ratio: 1524 / 942; 
+}
