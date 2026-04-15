@@ -128,68 +128,40 @@
 
     <script>
         (function () {
-            const zoomWrapper = document.getElementById("zoom");
+            const zoomContainer = document.getElementById("zoom");
             const mainImage = document.getElementById("main-img");
-            const magnifier = document.getElementById("large-img");
-            const magnifierWidth = 500;
-            const magnifierHeight = 300;
-            const zoomFactor = 3.5;
-            const overlayOffset = 24;
+            const magnifiedImage = document.getElementById("large-img");
 
-            if (!zoomWrapper || !mainImage || !magnifier) {
+            if (!zoomContainer || !mainImage || !magnifiedImage) {
                 return;
             }
 
             function hideMagnifier() {
-                magnifier.classList.remove("is-visible");
+                magnifiedImage.classList.remove("is-visible");
             }
 
             function updateMagnifier(event) {
-                const imageRect = mainImage.getBoundingClientRect();
-                const wrapperRect = zoomWrapper.getBoundingClientRect();
-                const pointerX = event.clientX - imageRect.left;
-                const pointerY = event.clientY - imageRect.top;
+                const rect = mainImage.getBoundingClientRect();
+                const offsetX = event.clientX - rect.left;
+                const offsetY = event.clientY - rect.top;
 
-                if (
-                    pointerX < 0 ||
-                    pointerY < 0 ||
-                    pointerX > imageRect.width ||
-                    pointerY > imageRect.height
-                ) {
+                if (offsetX < 0 || offsetY < 0 || offsetX > rect.width || offsetY > rect.height) {
                     hideMagnifier();
                     return;
                 }
 
-                const backgroundWidth = imageRect.width * zoomFactor;
-                const backgroundHeight = imageRect.height * zoomFactor;
-                const backgroundX = Math.min(
-                    Math.max(pointerX * zoomFactor - magnifierWidth / 2, 0),
-                    Math.max(backgroundWidth - magnifierWidth, 0)
-                );
-                const backgroundY = Math.min(
-                    Math.max(pointerY * zoomFactor - magnifierHeight / 2, 0),
-                    Math.max(backgroundHeight - magnifierHeight, 0)
-                );
-                const rawOverlayLeft = pointerX + overlayOffset;
-                const rawOverlayTop = pointerY + overlayOffset;
-                const overlayLeft = Math.min(
-                    Math.max(rawOverlayLeft, 0),
-                    Math.max(wrapperRect.width - magnifierWidth, 0)
-                );
-                const overlayTop = Math.min(
-                    Math.max(rawOverlayTop, 0),
-                    Math.max(wrapperRect.height - magnifierHeight, 0)
-                );
+                const xPercent = (offsetX / rect.width) * 100;
+                const yPercent = (offsetY / rect.height) * 100;
 
-                magnifier.style.backgroundSize = `${backgroundWidth}px ${backgroundHeight}px`;
-                magnifier.style.backgroundPosition = `-${backgroundX}px -${backgroundY}px`;
-                magnifier.style.left = `${overlayLeft}px`;
-                magnifier.style.top = `${overlayTop}px`;
-                magnifier.classList.add("is-visible");
+                magnifiedImage.style.left = `${offsetX - 250}px`;
+                magnifiedImage.style.top = `${offsetY - 150}px`;
+                magnifiedImage.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+                magnifiedImage.classList.add("is-visible");
             }
 
-            zoomWrapper.addEventListener("mousemove", updateMagnifier);
-            zoomWrapper.addEventListener("mouseleave", hideMagnifier);
+            zoomContainer.addEventListener("pointermove", updateMagnifier);
+            zoomContainer.addEventListener("pointerleave", hideMagnifier);
+            zoomContainer.addEventListener("pointercancel", hideMagnifier);
         })();
     </script>
 </body>
