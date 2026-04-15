@@ -13,6 +13,67 @@
 
     <meta property="og:site_name" content="Statistical Decision Tree" />
     <title>Statistical Decision Tree</title>
+
+    <style>
+        .magnify-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: zoom-in;
+        }
+
+        .magnify-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: zoom-in;
+        }
+
+        .magnify-wrapper.image-overlay-active {
+            cursor: zoom-out;
+        }
+
+        .image-fullscreen-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            cursor: zoom-out;
+        }
+
+        .image-fullscreen-overlay.is-visible {
+            display: flex;
+        }
+
+        .image-fullscreen-overlay img {
+            display: block;
+            width: calc(100vw - 2rem);
+            height: calc(100vh - 2rem);
+            max-width: calc(100vw - 2rem);
+            max-height: calc(100vh - 2rem);
+            margin: 0;
+            padding: 0.75rem;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.28);
+            object-fit: contain;
+            cursor: zoom-out;
+        }
+
+        .magnify-wrapper.image-overlay-active #large-img {
+            display: none !important;
+        }
+
+        #large-img {
+            pointer-events: none;
+        }
+    </style>
+
 </head>
 <body>
     <div class="page-shell">
@@ -140,11 +201,55 @@
                 return;
             }
 
+            const fullscreenOverlay = document.createElement("div");
+            fullscreenOverlay.className = "image-fullscreen-overlay";
+            fullscreenOverlay.setAttribute("aria-hidden", "true");
+
+            const fullscreenImage = document.createElement("img");
+            fullscreenImage.src = mainImage.currentSrc || mainImage.src;
+            fullscreenImage.alt = mainImage.alt || "";
+            fullscreenOverlay.appendChild(fullscreenImage);
+            document.body.appendChild(fullscreenOverlay);
+
             function hideMagnifier() {
                 magnifier.classList.remove("is-visible");
             }
 
+            function isFullscreenMode() {
+                return fullscreenOverlay.classList.contains("is-visible");
+            }
+
+            function enterFullscreenMode() {
+                hideMagnifier();
+                fullscreenImage.src = mainImage.currentSrc || mainImage.src;
+                fullscreenOverlay.classList.add("is-visible");
+                zoomWrapper.classList.add("image-overlay-active");
+                fullscreenOverlay.setAttribute("aria-hidden", "false");
+                document.body.style.overflow = "hidden";
+            }
+
+            function leaveFullscreenMode() {
+                fullscreenOverlay.classList.remove("is-visible");
+                zoomWrapper.classList.remove("image-overlay-active");
+                fullscreenOverlay.setAttribute("aria-hidden", "true");
+                document.body.style.overflow = "";
+            }
+
+            function toggleFullscreenMode() {
+                if (isFullscreenMode()) {
+                    leaveFullscreenMode();
+                    return;
+                }
+
+                enterFullscreenMode();
+            }
+
             function updateMagnifier(event) {
+                if (isFullscreenMode()) {
+                    hideMagnifier();
+                    return;
+                }
+
                 const imageRect = mainImage.getBoundingClientRect();
                 const wrapperRect = zoomWrapper.getBoundingClientRect();
                 const pointerX = event.clientX - imageRect.left;
@@ -181,6 +286,7 @@
                     Math.max(wrapperRect.height - magnifierHeight, 0)
                 );
 
+                magnifier.style.backgroundImage = `url("${mainImage.currentSrc || mainImage.src}")`;
                 magnifier.style.backgroundSize = `${backgroundWidth}px ${backgroundHeight}px`;
                 magnifier.style.backgroundPosition = `-${backgroundX}px -${backgroundY}px`;
                 magnifier.style.left = `${overlayLeft}px`;
@@ -190,6 +296,21 @@
 
             zoomWrapper.addEventListener("mousemove", updateMagnifier);
             zoomWrapper.addEventListener("mouseleave", hideMagnifier);
+
+            mainImage.addEventListener("click", function (event) {
+                event.preventDefault();
+                toggleFullscreenMode();
+            });
+
+            fullscreenOverlay.addEventListener("click", function () {
+                leaveFullscreenMode();
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && isFullscreenMode()) {
+                    leaveFullscreenMode();
+                }
+            });
         })();
     </script>
 </body>
