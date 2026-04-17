@@ -65,13 +65,17 @@ h3 {
 
 .page-shell {
     min-height: 100vh;
+    width: 100%;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding: 48px 16px;
+    overflow-x: clip;
 }
 
 .page-card {
+    width: 100%;
+    min-width: 0;
     max-width: 1120px;
     background: rgba(255, 255, 255, 0.96);
     padding: 36px 36px 28px;
@@ -133,46 +137,6 @@ h3 {
 
 .section-intro {
     margin-bottom: 18px;
-}
-
-.figure-card {
-    padding: 20px;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #f8fafc;
-    overflow: hidden;
-}
-
-.decision-tree-image {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 10px;
-    background: #ffffff;
-    cursor: crosshair;
-}
-
-.magnify-wrapper {
-    position: relative;
-    overflow: visible;
-}
-
-.magnify-wrapper #large-img {
-    background: url("../decisiontree.png") no-repeat #ffffff;
-    width: 500px;
-    height: 300px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
-    pointer-events: none;
-    position: absolute;
-    border: 5px solid #ffffff;
-    z-index: 10;
-    border-radius: 12px;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.magnify-wrapper #large-img.is-visible {
-    opacity: 1;
 }
 
 .resource-list {
@@ -253,14 +217,7 @@ h3 {
     }
 
     .resource-actions,
-    #githublink,
-    #large-img {
-        display: none !important;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .magnify-wrapper #large-img {
+    #githublink {
         display: none !important;
     }
 }

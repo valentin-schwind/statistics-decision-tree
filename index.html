@@ -9,79 +9,19 @@
     <link rel="stylesheet" href="_css/bootstrap.min.css" />
     <link rel="stylesheet" href="_css/bootstrap-icons.css" />
     <link rel="stylesheet" href="_css/style.css" />
+    <link rel="stylesheet" href="_css/statistics-decision-tree-app.css" />
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
     <meta property="og:site_name" content="Statistical Decision Tree" />
     <title>Statistical Decision Tree</title>
-
-    <style>
-        .magnify-wrapper {
-            position: relative;
-            display: inline-block;
-            cursor: zoom-in;
-        }
-
-        .magnify-wrapper {
-            position: relative;
-            display: inline-block;
-            cursor: zoom-in;
-        }
-
-        .magnify-wrapper.image-overlay-active {
-            cursor: zoom-out;
-        }
-
-        .image-fullscreen-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            width: 100vw;
-            height: 100vh;
-            padding: 0;
-            margin: 0;
-            background: transparent;
-            cursor: zoom-out;
-        }
-
-        .image-fullscreen-overlay.is-visible {
-            display: flex;
-        }
-
-        .image-fullscreen-overlay img {
-            display: block;
-            width: calc(100vw - 2rem);
-            height: calc(100vh - 2rem);
-            max-width: calc(100vw - 2rem);
-            max-height: calc(100vh - 2rem);
-            margin: 0;
-            padding: 0.75rem;
-            border-radius: 12px;
-            background: #ffffff;
-            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.28);
-            object-fit: contain;
-            cursor: zoom-out;
-        }
-
-        .magnify-wrapper.image-overlay-active #large-img {
-            display: none !important;
-        }
-
-        #large-img {
-            pointer-events: none;
-        }
-    </style>
-
 </head>
 <body>
     <div class="page-shell">
-        <div id="mainFrame" class="container page-card rounded">
+        <div id="mainFrame" class="page-card decision-tree-page rounded">
             <header class="page-header">
                 <div class="logo-row">
                     <a href="https://hci-studies.org/" target="_blank" rel="noopener noreferrer">
-                        <img src="_img/hdmlogo.png" class="header-logo" alt="HdM logo" width="72" style="width: 72px; min-width: 72px; max-width: 72px; height: auto;" />
+                        <img src="_img/hdmlogo.png" class="header-logo" alt="Hochschule der Medien Stuttgart logo" width="72" />
                     </a>
                 </div>
 
@@ -89,229 +29,86 @@
 
                 <h1>Statistical Decision Tree</h1>
 
-                <p class="intro">
-                    Explore a visual decision aid for inferential statistics and null hypothesis significance testing in HCI research. This page provides the decision tree directly in the browser together with downloadable PDF, SVG, PNG and JPG versions for teaching, study planning and quick reference.
-                </p>
-                <p class="intro-note">
-                    The infographic is meant as orientation support for students and novice researchers. It does not replace statistical training, method consultation or supervision for study-specific analysis decisions.
+                <p class="intro intro-combined">
+                    Explore the statistical decision tree as an interactive web application for teaching, method orientation and early analysis planning in HCI research.
+                    <span class="intro-note-inline">The tool is meant as orientation support for students and novice researchers. It does not replace statistical training, supervision or study-specific method consultation.</span>
                 </p>
             </header>
 
             <section class="content-section">
-                <div class="section-heading">
-                    <h2><i class="bi bi-diagram-3 me-2"></i>Decision Tree</h2>
-                </div>
-                <p class="section-intro">
-                    Move your cursor over the graphic to inspect details with the built-in zoom lens, or open one of the downloadable formats below for full-size viewing.
-                </p>
+                <div class="decision-tree-app">
+                    <div class="container">
+                        <h2 class="view-title" id="treeSection">Decision tree</h2>
+                        <div class="overview-wrap">
+                            <svg id="overviewSvg" aria-label="Interactive statistical decision tree"></svg>
+                        </div>
+                        <p class="tree-scroll-hint d-md-none">
+                            Swipe horizontally to inspect the full decision tree on smaller screens.
+                        </p>
 
-                <div class="figure-card">
-                    <div id="zoom" class="magnify-wrapper">
-                        <img src="decisiontree.png" id="main-img" class="img-fluid decision-tree-image" alt="Statistical decision tree infographic" />
-                        <div id="large-img" aria-hidden="true"></div>
+                        <div class="qa-layout">
+                            <div class="card question-box" id="questionSection">
+                                <h2>Current question</h2>
+                                <div id="questionArea"></div>
+                                <div class="answers answers-under-question" id="answers" aria-live="polite"></div>
+                            </div>
+
+                            <div class="card result-box">
+                                <h2>Result</h2>
+                                <div id="resultArea">
+                                    <p class="small">
+                                        The recommended test or model appears after the last required question has been answered.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <noscript>
+                    <div class="alert alert-warning mt-3 mb-0" role="alert">
+                        This application requires JavaScript to render the interactive decision tree.
+                    </div>
+                </noscript>
             </section>
 
             <section class="content-section">
                 <div class="section-heading">
-                    <h2><i class="bi bi-download me-2"></i>Downloads</h2>
+                    <h2><i class="bi bi-journal-text me-2"></i>Source And Citation</h2>
                 </div>
-                <p class="section-intro">
-                    Choose the format that best fits your workflow, whether you need a print-ready PDF, editable vector graphic or bitmap export.
-                </p>
-
-                <div class="resource-list">
-                    <div class="resource-item">
-                        <div class="resource-text">
-                            <h3><i class="bi bi-file-earmark-pdf me-2"></i>PDF Version</h3>
-                            <p>Print-friendly document format for teaching materials, handouts and offline sharing.</p>
-                        </div>
-                        <div class="resource-actions">
-                            <a href="decisiontree.pdf" class="btn btn-primary" role="button">Download PDF</a>
-                        </div>
-                    </div>
-                    <div class="resource-item">
-                        <div class="resource-text">
-                            <h3><i class="bi bi-bezier2 me-2"></i>SVG Version</h3>
-                            <p>Scalable vector graphic for high-resolution display and further editing in design tools.</p>
-                        </div>
-                        <div class="resource-actions">
-                            <a href="decisiontree.svg" class="btn btn-outline-secondary" role="button">Download SVG</a>
-                        </div>
-                    </div>
-                    <div class="resource-item">
-                        <div class="resource-text">
-                            <h3><i class="bi bi-file-image me-2"></i>Bitmap Versions</h3>
-                            <p>Ready-to-use image exports for slides, websites or documents in PNG and JPG format.</p>
-                        </div>
-                        <div class="resource-actions">
-                            <a href="decisiontree.png" class="btn btn-outline-secondary" role="button">PNG</a>
-                            <a href="decisiontree.jpg" class="btn btn-outline-secondary" role="button">JPG</a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="content-section">
-                <div class="section-heading">
-                    <h2><i class="bi bi-github me-2"></i>Source Code</h2>
-                </div>
-                <p class="section-intro">Public source repository for the browser-based Statistical Decision Tree page.</p>
-
                 <div class="resource-list">
                     <div class="resource-item" id="githublink">
-                        <div class="resource-text">
+                        <div class="resource-text source-box">
                             <h3><i class="bi bi-code-square me-2"></i>Statistical Decision Tree Repository</h3>
-                            <p><a href="https://github.com/valentin-schwind/statistics-decision-tree" target="_blank" rel="noopener noreferrer">Source code on GitHub</a> for the current browser-based Statistical Decision Tree and its downloadable assets.</p>
+                            <p>
+                                <a href="https://github.com/valentin-schwind/statistics-decision-tree" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>
+                                for the current browser-based Statistical Decision Tree and its interactive decision support logic.
+                            </p>
                         </div>
                         <div class="resource-actions">
-                            <a href="https://github.com/valentin-schwind/statistics-decision-tree" target="_blank" rel="noopener noreferrer" class="btn btn-primary" role="button">GitHub</a>
+                            <a href="https://github.com/valentin-schwind/statistics-decision-tree" target="_blank" rel="noopener noreferrer" class="btn btn-primary">GitHub</a>
+                        </div>
+                    </div>
+
+                    <div class="resource-item citation-resource">
+                        <div class="resource-text citation-box">
+                            <h3><i class="bi bi-quote me-2"></i>Citation And Disclaimer</h3>
+                            <p>
+                                <a href="https://valentin-schwind.de" target="_blank" rel="noopener noreferrer">Prof. Dr. Valentin Schwind</a>. Hochschule der Medien Stuttgart. No liability for external links, correctness, completeness and up-to-dateness of any content. Site visits might result in storing anonymized data (date, time, page viewed). Utilization at the user's own risk. Data can be stored on the computers to facilitate the user's website access. Contribute <a href="https://github.com/stars/valentin-schwind/lists/hci-user-studies-toolkit" target="_blank" rel="noopener noreferrer">here</a>.
+                            </p>
+                            <p><strong>Find/cite the publication of the toolkit here:</strong></p>
+                            <code class="citation-copy">
+                                Valentin Schwind, Stefan Resch, and Jessica Sehrt. 2023. The HCI User Studies Toolkit: Supporting Study Designing and Planning for Undergraduates and Novice Researchers in Human-Computer Interaction. In Extended Abstracts of the 2023 CHI Conference on Human Factors in Computing Systems (CHI EA '23), April 23-28, 2023, Hamburg, Germany. ACM, New York, NY, USA, 7 pages.
+                                <a href="https://doi.org/10.1145/3544549.3585890" target="_blank" rel="noopener noreferrer">https://doi.org/10.1145/3544549.3585890</a>
+                            </code>
                         </div>
                     </div>
                 </div>
             </section>
-
-            <footer class="site-footer">
-                <p>
-                    <a href="https://valentin-schwind.de" target="_blank" rel="noopener noreferrer">Prof. Dr. Valentin Schwind</a>. University of Applied Sciences Frankfurt. No liability for external links, correctness, completeness and up-to-dateness of any content. Site visits might result in storing anonymized data (date, time, page viewed). Utilization at the user's own risk. Data can be stored on the computers to facilitate the user's website access. Contribute <a href="https://github.com/stars/valentin-schwind/lists/hci-user-studies-toolkit" target="_blank" rel="noopener noreferrer">here</a>.
-                </p>
-                <p>
-                    <strong>Find/cite the publication of the toolkit here:</strong><br />
-                    <code>
-                        Valentin Schwind, Stefan Resch, and Jessica Sehrt. 2023. The HCI User Studies Toolkit: Supporting Study Designing and Planning for Undergraduates and Novice Researchers in Human-Computer Interaction. In Extended Abstracts of the 2023 CHI Conference on Human Factors in Computing Systems (CHI EA '23), April 23-28, 2023, Hamburg, Germany. ACM, New York, NY, USA, 7 pages.
-                        <a href="https://doi.org/10.1145/3544549.3585890" target="_blank" rel="noopener noreferrer">https://doi.org/10.1145/3544549.3585890</a>
-                    </code>
-                </p>
-            </footer>
         </div>
     </div>
 
-    <script>
-        (function () {
-            const zoomWrapper = document.getElementById("zoom");
-            const mainImage = document.getElementById("main-img");
-            const magnifier = document.getElementById("large-img");
-            const magnifierWidth = 500;
-            const magnifierHeight = 300;
-            const zoomFactor = 3.5;
-            const overlayOffset = 24;
-
-            if (!zoomWrapper || !mainImage || !magnifier) {
-                return;
-            }
-
-            const fullscreenOverlay = document.createElement("div");
-            fullscreenOverlay.className = "image-fullscreen-overlay";
-            fullscreenOverlay.setAttribute("aria-hidden", "true");
-
-            const fullscreenImage = document.createElement("img");
-            fullscreenImage.src = mainImage.currentSrc || mainImage.src;
-            fullscreenImage.alt = mainImage.alt || "";
-            fullscreenOverlay.appendChild(fullscreenImage);
-            document.body.appendChild(fullscreenOverlay);
-
-            function hideMagnifier() {
-                magnifier.classList.remove("is-visible");
-            }
-
-            function isFullscreenMode() {
-                return fullscreenOverlay.classList.contains("is-visible");
-            }
-
-            function enterFullscreenMode() {
-                hideMagnifier();
-                fullscreenImage.src = mainImage.currentSrc || mainImage.src;
-                fullscreenOverlay.classList.add("is-visible");
-                zoomWrapper.classList.add("image-overlay-active");
-                fullscreenOverlay.setAttribute("aria-hidden", "false");
-                document.body.style.overflow = "hidden";
-            }
-
-            function leaveFullscreenMode() {
-                fullscreenOverlay.classList.remove("is-visible");
-                zoomWrapper.classList.remove("image-overlay-active");
-                fullscreenOverlay.setAttribute("aria-hidden", "true");
-                document.body.style.overflow = "";
-            }
-
-            function toggleFullscreenMode() {
-                if (isFullscreenMode()) {
-                    leaveFullscreenMode();
-                    return;
-                }
-
-                enterFullscreenMode();
-            }
-
-            function updateMagnifier(event) {
-                if (isFullscreenMode()) {
-                    hideMagnifier();
-                    return;
-                }
-
-                const imageRect = mainImage.getBoundingClientRect();
-                const wrapperRect = zoomWrapper.getBoundingClientRect();
-                const pointerX = event.clientX - imageRect.left;
-                const pointerY = event.clientY - imageRect.top;
-
-                if (
-                    pointerX < 0 ||
-                    pointerY < 0 ||
-                    pointerX > imageRect.width ||
-                    pointerY > imageRect.height
-                ) {
-                    hideMagnifier();
-                    return;
-                }
-
-                const backgroundWidth = imageRect.width * zoomFactor;
-                const backgroundHeight = imageRect.height * zoomFactor;
-                const backgroundX = Math.min(
-                    Math.max(pointerX * zoomFactor - magnifierWidth / 2, 0),
-                    Math.max(backgroundWidth - magnifierWidth, 0)
-                );
-                const backgroundY = Math.min(
-                    Math.max(pointerY * zoomFactor - magnifierHeight / 2, 0),
-                    Math.max(backgroundHeight - magnifierHeight, 0)
-                );
-                const rawOverlayLeft = pointerX + overlayOffset;
-                const rawOverlayTop = pointerY + overlayOffset;
-                const overlayLeft = Math.min(
-                    Math.max(rawOverlayLeft, 0),
-                    Math.max(wrapperRect.width - magnifierWidth, 0)
-                );
-                const overlayTop = Math.min(
-                    Math.max(rawOverlayTop, 0),
-                    Math.max(wrapperRect.height - magnifierHeight, 0)
-                );
-
-                magnifier.style.backgroundImage = `url("${mainImage.currentSrc || mainImage.src}")`;
-                magnifier.style.backgroundSize = `${backgroundWidth}px ${backgroundHeight}px`;
-                magnifier.style.backgroundPosition = `-${backgroundX}px -${backgroundY}px`;
-                magnifier.style.left = `${overlayLeft}px`;
-                magnifier.style.top = `${overlayTop}px`;
-                magnifier.classList.add("is-visible");
-            }
-
-            zoomWrapper.addEventListener("mousemove", updateMagnifier);
-            zoomWrapper.addEventListener("mouseleave", hideMagnifier);
-
-            mainImage.addEventListener("click", function (event) {
-                event.preventDefault();
-                toggleFullscreenMode();
-            });
-
-            fullscreenOverlay.addEventListener("click", function () {
-                leaveFullscreenMode();
-            });
-
-            document.addEventListener("keydown", function (event) {
-                if (event.key === "Escape" && isFullscreenMode()) {
-                    leaveFullscreenMode();
-                }
-            });
-        })();
-    </script>
+    <script src="_js/bootstrap.bundle.min.js"></script>
+    <script src="_js/statistics-decision-tree-app.js"></script>
 </body>
 </html>

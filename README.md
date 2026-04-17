@@ -1,7 +1,5 @@
-# Decision Tree for Inferential Statistics using Variance Analyses
-Info graphics for students and people interested in inferential statistics and null hypothesis significance testing (NHST)
-
-![preview](https://github.com/valentin-schwind/statistics-decision-tree/blob/master/decisiontree.jpg)
+# Statistical Decision Tree
+Interactive decision support for students and researchers who need orientation when choosing inferential statistics and null hypothesis significance testing (NHST) procedures in HCI research.
 
 If you want to adequately <a href="https://github.com/valentin-schwind/statistics-decision-tree/blob/master/HCIToolkit.bib"> cite</a> this work, and show us your amazing projects!
 
