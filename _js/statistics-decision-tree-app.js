@@ -263,23 +263,49 @@ const rows = [
         iv_levels: "",
         design: "",
         dv_parametric: "no",
+        analysis_goal: "association",
         dv_subtype: "",
         route: "",
         status: "resolved",
-        recommended_test:
-            "Spearman correlation (for monotonic association) or robust / permutation-based simple regression (for slope estimation)",
+        recommended_test: "Spearman rank correlation",
         what_it_does:
-            "Uses Spearman correlation when the goal is to quantify a monotonic association; uses a robust or permutation-based regression when the goal is to estimate and test a slope under violated assumptions.",
-        r_code: 'cor.test(df$x, df$y, method = "spearman", exact = FALSE)\n# or robustbase::lmrob(y ~ x, data = df)\n# or a permutation-based regression test',
+            "Quantifies monotonic association between two continuous variables without treating one variable as a modeled outcome with a slope parameter.",
+        r_code: 'cor.test(df$x, df$y, method = "spearman", exact = FALSE)',
         python_code:
-            'from scipy import stats\nstats.spearmanr(df["x"], df["y"])\n# or use a robust / permutation regression implementation',
+            'from scipy import stats\nstats.spearmanr(df["x"], df["y"])',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes:
-            "rho (association) or slope-based measures (e.g., standardized beta, robust R^2)",
+        effect_sizes: "Spearman's rho",
         follow_up_questions:
-            "Decide explicitly whether the research question concerns association (rank-based) or a directional slope model; inspect monotonicity, outliers, and leverage.",
+            "Use this route only when the goal is association. If the goal is slope estimation or prediction, move to the regression route on the next branch instead.",
+        equivalence_option: "",
+    },
+    {
+        id: "A10b",
+        dv_count: "1",
+        dv_kind: "continuous",
+        iv_count: "1",
+        iv_kind: "continuous",
+        iv_levels: "",
+        design: "",
+        dv_parametric: "no",
+        analysis_goal: "slope_estimation",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test: "Robust simple linear regression",
+        what_it_does:
+            "Estimates a directional slope for one continuous predictor when Gaussian linear-model assumptions are not credible because of outliers, heavy tails, or influential observations.",
+        r_code: "fit <- robustbase::lmrob(y ~ x, data = df)\nsummary(fit)",
+        python_code:
+            'import statsmodels.formula.api as smf\nfit = smf.rlm("y ~ x", data=df).fit()\nprint(fit.summary())',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
+        effect_sizes: "robust R^2, standardized beta",
+        follow_up_questions:
+            "Use this route only when the research goal is slope estimation or prediction. If you only need a monotonic association measure, prefer Spearman correlation instead.",
         equivalence_option: "",
     },
     {
@@ -319,21 +345,49 @@ const rows = [
         iv_levels: "",
         design: "",
         dv_parametric: "no",
+        analysis_goal: "robust_estimation",
         dv_subtype: "",
         route: "",
         status: "resolved",
-        recommended_test: "Robust permutation multiple regression",
+        recommended_test: "Robust multiple regression",
         what_it_does:
-            "Uses a robust or permutation-based multiple regression when classical assumptions are not acceptable.",
+            "Estimates multiple-regression coefficients with outlier-resistant estimation when Gaussian-model assumptions are not acceptable but the target remains regression coefficients on the observed scale.",
         r_code: "fit <- robustbase::lmrob(y ~ x1 + x2 + x3, data = df)",
         python_code:
-            "# use a robust or permutation regression implementation",
+            'import statsmodels.formula.api as smf\nfit = smf.rlm("y ~ x1 + x2 + x3", data=df).fit()\nprint(fit.summary())',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes: "model-dependent",
+        effect_sizes: "robust R^2, standardized beta, semi-partial R^2",
         follow_up_questions:
-            "Decide whether robust estimation, permutation inference, or both are needed.",
+            "Use this route when the main target is robust coefficient estimation. If you primarily want permutation-based p values under weak assumptions, choose the permutation regression branch instead.",
+        equivalence_option: "",
+    },
+    {
+        id: "A12b",
+        dv_count: "1",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "continuous",
+        iv_levels: "",
+        design: "",
+        dv_parametric: "no",
+        analysis_goal: "permutation_inference",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test: "Permutation multiple regression",
+        what_it_does:
+            "Uses a regression model with permutation-based inference when the main goal is valid p values or confidence assessment under weak distributional assumptions rather than robust point estimation.",
+        r_code: "fit <- permuco::lmp(y ~ x1 + x2 + x3, data = df)\nsummary(fit)",
+        python_code:
+            "# not recommended: no standard maintained Python implementation is provided here for a general permutation multiple-regression workflow\n# prefer the R route shown below when permutation-based inference is the primary goal",
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
+        effect_sizes: "R^2, partial R^2, standardized beta",
+        follow_up_questions:
+            "Use this route when permutation inference is the main goal. If the main need is outlier-resistant estimation, prefer robust multiple regression instead.",
         equivalence_option: "",
     },
     {
@@ -408,10 +462,10 @@ const rows = [
         dv_subtype: "",
         route: "",
         status: "resolved",
-        recommended_test: "Linear mixed model or mixed ANOVA",
+        recommended_test: "Linear mixed model",
         what_it_does:
-            "Handles both within- and between-subject categorical IVs on one continuous DV; linear mixed models are often preferable because they are more flexible for missing or unbalanced repeated data.",
-        r_code: "library(lme4)\nfit <- lmer(y ~ between_factor * within_factor + (1|subject), data = df)\nsummary(fit)\n\n# classical alternative for balanced complete data: mixed ANOVA",
+            "Handles mixed designs with within- and between-subject categorical IVs on one continuous DV while accommodating incomplete or unbalanced repeated data more gracefully than classical mixed ANOVA.",
+        r_code: "library(lme4)\nfit <- lmer(y ~ between_factor * within_factor + (1|subject), data = df)\nsummary(fit)\n\n# mixed ANOVA remains a special-case alternative for balanced complete data",
         python_code:
             'import statsmodels.formula.api as smf\nfit = smf.mixedlm("y ~ between_factor * within_factor", data=df, groups=df["subject"]).fit()\nprint(fit.summary())',
         bayes_test: "Bayesian Gaussian mixed model",
@@ -419,9 +473,9 @@ const rows = [
             "library(rstanarm)\nstan_glmer(y ~ between_factor * within_factor + (1|subject), data = df, family = gaussian())",
         bayes_python_code:
             'import bambi as bmb\nmodel = bmb.Model("y ~ between_factor * within_factor + (1|subject)", df)\nidata = model.fit()',
-        effect_sizes: "marginal / conditional R^2, partial eta^2",
+        effect_sizes: "marginal R^2, conditional R^2, standardized beta",
         follow_up_questions:
-            "Use a classical mixed ANOVA mainly for balanced complete data; otherwise prefer a mixed model and consider whether random slopes are needed.",
+            "Treat mixed ANOVA as a special case for balanced complete data with simple covariance assumptions. In most practical datasets, stay with the linear mixed-model route and consider whether random slopes are needed.",
         equivalence_option:
             "Usually via ROPE/HDI on fixed effects.",
     },
@@ -437,20 +491,18 @@ const rows = [
         dv_subtype: "",
         route: "",
         status: "resolved",
-        recommended_test:
-            "Aligned rank transform (ART) ANOVA or permutation-based factorial model",
+        recommended_test: "Aligned rank transform (ART) factorial ANOVA",
         what_it_does:
-            "Provides a nonparametric factorial alternative for purely categorical between-subject factors using aligned rank transforms; permutation-based factorial models are often a robust alternative.",
-        r_code: "library(ARTool)\nfit <- art(y ~ A * B, data = df)\nanova(fit)\n# alternatively consider a permutation-based factorial model",
+            "Provides a nonparametric factorial route for purely categorical between-subject factors by fitting an aligned-rank-transform model and testing factorial terms on the aligned ranks.",
+        r_code: "library(ARTool)\nfit <- art(y ~ A * B, data = df)\nanova(fit)",
         python_code:
-            "# not found: a broadly adopted Python ART implementation comparable to R ARTool\n# for factorial nonparametric models, prefer R ARTool or vegan/permuco workflows",
+            "# not recommended: no standard maintained Python implementation is available here for ART factorial ANOVA comparable to R ARTool\n# prefer the R route shown below",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes:
-            "typically contrast-based effect sizes; optionally R^2-like summaries",
+        effect_sizes: "No standard omnibus effect size",
         follow_up_questions:
-            "Use ART only for purely categorical factors; verify interaction effects carefully and consider permutation-based approaches if assumptions or interpretation are unclear.",
+            "Use ART only for purely categorical factors. Report aligned-rank test statistics and planned contrasts; if you need permutation inference instead, treat that as a separate analytical route.",
         equivalence_option: "",
     },
     {
@@ -466,19 +518,18 @@ const rows = [
         route: "",
         status: "resolved",
         recommended_test:
-            "Permutation-based repeated-measures model or aligned-rank-transform approach (with explicit subject structure)",
+            "Aligned rank transform repeated-measures model",
         what_it_does:
-            "Provides a nonparametric route for repeated-measures categorical factors; permutation-based repeated-measures methods are often preferable, while ART requires careful specification of the subject/error structure.",
-        r_code: "# ART (requires explicit error structure)\nlibrary(ARTool)\nfit <- art(y ~ A * B + Error(subject/(A*B)), data = df)\nanova(fit)\n\n# alternatively consider a permutation-based repeated-measures model",
+            "Provides a nonparametric route for repeated-measures categorical factors via aligned ranks while keeping the subject structure explicit in the model specification.",
+        r_code: "# ART with explicit repeated-measures structure\nlibrary(ARTool)\nfit <- art(y ~ A * B + Error(subject/(A*B)), data = df)\nanova(fit)",
         python_code:
-            "# not found: a standard mainstream Python package offering a direct repeated-measures permutation model comparable to the R route used here",
+            "# not recommended: no standard maintained Python implementation is available here for an ART repeated-measures model comparable to the R route shown below",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes:
-            "typically contrast-based effect sizes; optionally R^2-like summaries",
+        effect_sizes: "No standard omnibus effect size",
         follow_up_questions:
-            "Ensure the repeated-measures structure is modeled explicitly; consider whether permutation-based inference is more appropriate or interpretable than ART.",
+            "Model the repeated-measures structure explicitly and report aligned-rank test statistics or planned contrasts. If your main goal is permutation inference, treat that as a separate route.",
         equivalence_option: "",
     },
     {
@@ -494,19 +545,18 @@ const rows = [
         route: "",
         status: "resolved",
         recommended_test:
-            "Permutation-based mixed model or aligned-rank-transform approach (with explicit clustering)",
+            "Aligned rank transform mixed-design model",
         what_it_does:
-            "Provides a nonparametric route for mixed categorical designs; permutation-based mixed-model approaches are often preferred, while ART requires explicit modeling of subject-level clustering.",
-        r_code: "# ART (requires explicit clustering structure)\nlibrary(ARTool)\nfit <- art(y ~ between_factor * within_factor + Error(subject/within_factor), data = df)\nanova(fit)\n\n# alternatively consider a permutation-based mixed model",
+            "Provides a nonparametric route for mixed categorical designs by combining aligned ranks with an explicit clustering structure for repeated observations within subjects.",
+        r_code: "# ART with explicit clustering structure\nlibrary(ARTool)\nfit <- art(y ~ between_factor * within_factor + Error(subject/within_factor), data = df)\nanova(fit)",
         python_code:
-            "# not found: a standard mainstream Python package offering a direct mixed-design permutation model comparable to the R route used here",
+            "# not recommended: no standard maintained Python implementation is available here for an ART mixed-design model comparable to the R route shown below",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes:
-            "typically contrast-based effect sizes; optionally R^2-like summaries",
+        effect_sizes: "No standard omnibus effect size",
         follow_up_questions:
-            "Model subject-level dependence explicitly; for complex or unbalanced designs, permutation-based mixed models are often more robust and interpretable.",
+            "Model subject-level dependence explicitly and report aligned-rank omnibus results or planned contrasts. If permutation inference is the actual target, use a dedicated permutation workflow rather than treating it as the same method.",
         equivalence_option: "",
     },
     {
@@ -585,14 +635,14 @@ const rows = [
             "A robust mixed-model route for heavy tails, outliers, or heterogeneity in repeated / mixed designs.",
         r_code: "library(robustlmm)\nfit <- rlmer(y ~ between_factor * within_factor * x1 + (1|subject), data = df)\nsummary(fit)",
         python_code:
-            "# not found: a standard mainstream Python package with a direct analogue of robustlmm::rlmer for Gaussian robust mixed models",
+            "# not recommended: no standard maintained Python implementation is available here for a Gaussian robust mixed model comparable to robustlmm::rlmer\n# prefer the R route shown below",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
         effect_sizes:
-            "marginal / conditional R^2, robust coefficients",
+            "marginal R^2, conditional R^2, standardized beta",
         follow_up_questions:
-            "Use when repeated or mixed designs are continuous-DV problems with outlier sensitivity.",
+            "Use when repeated or mixed designs are continuous-DV problems with clear outlier sensitivity. No standard maintained frequentist Python implementation is recommended here.",
         equivalence_option: "",
     },
     {
@@ -610,17 +660,17 @@ const rows = [
         recommended_test:
             "Permutation-based general linear model (including permutation ANCOVA as a special case)",
         what_it_does:
-            "Tests effects of categorical factors and continuous covariates on one continuous DV using permutation-based inference when classical assumptions are not acceptable.",
-        r_code: "# permutation-based linear model\nlibrary(permuco)\nfit <- lmp(y ~ group + x1, data = df)\nsummary(fit)\n# alternatively use a robust regression such as robustbase::lmrob(...) when robustness rather than permutation inference is the main goal",
+            "Tests effects of categorical factors and continuous covariates on one continuous DV using permutation-based inference when the main goal is permutation-valid p values rather than robust coefficient estimation.",
+        r_code: "# permutation-based linear model\nlibrary(permuco)\nfit <- lmp(y ~ group + x1, data = df)\nsummary(fit)",
         python_code:
-            "# use a permutation-based general linear model / ANCOVA implementation\n# alternatively use a robust regression implementation if robustness is the main goal",
+            "# not recommended: no standard maintained Python implementation is provided here for a general permutation GLM / permutation ANCOVA workflow\n# prefer the R route shown below when permutation inference is the primary goal",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
         effect_sizes:
             "partial R^2, model R^2, permutation-based effect summaries",
         follow_up_questions:
-            "Decide whether permutation inference, robust estimation, or both are required; inspect leverage, heteroskedasticity, and the role of covariates carefully.",
+            "Use this route when permutation inference is the main target. If the main need is robust estimation rather than permutation-based p values, use a robust regression route instead.",
         equivalence_option: "",
     },
     {
@@ -690,18 +740,18 @@ const rows = [
         route: "",
         status: "resolved",
         recommended_test:
-            "Stuart-Maxwell test of marginal homogeneity or Bowker test of symmetry",
+            "Stuart-Maxwell test of marginal homogeneity or Bowker-type symmetry test",
         what_it_does:
-            "For paired nominal outcomes with more than two matched categories in a square table, the Stuart-Maxwell test assesses whether row and column marginal distributions are equal, whereas the Bowker test assesses symmetry of the full table.",
-        r_code: "tab <- table(df$before, df$after)\n# Stuart-Maxwell is often the default target for before/after nominal data with >2 categories\n# Bowker can be used when symmetry of the full square table is the target hypothesis",
+            "For paired nominal outcomes with more than two matched categories in a square table, Stuart-Maxwell targets marginal homogeneity, whereas Bowker-type symmetry tests target symmetry of the full off-diagonal pattern.",
+        r_code: "tab <- table(df$before, df$after)\n\n# marginal homogeneity\nDescTools::StuartMaxwellTest(tab)\n\n# symmetry of the full square table (Bowker-type omnibus)\nrcompanion::nominalSymmetryTest(tab, exact = FALSE)",
         python_code:
             "from statsmodels.stats.contingency_tables import SquareTable\nsq = SquareTable(tab)\nsq.homogeneity()   # Stuart-Maxwell / marginal homogeneity\n# sq.symmetry()    # Bowker / symmetry",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes: "table-based residual diagnostics",
+        effect_sizes: "No standard omnibus effect size",
         follow_up_questions:
-            "Use Stuart-Maxwell when the question is marginal homogeneity across matched nominal categories; use Bowker when full table symmetry is the target.",
+            "Choose Stuart-Maxwell for marginal homogeneity and Bowker-type symmetry only when symmetry of the full square table is the target. Report the omnibus statistic and inspect off-diagonal asymmetries rather than forcing a generic effect-size label.",
         equivalence_option: "",
     },
     {
@@ -745,11 +795,12 @@ const rows = [
         dv_subtype: "count",
         route: "",
         status: "resolved",
-        recommended_test: "Poisson / negative binomial regression",
-        what_it_does: "Models count outcomes from predictors.",
-        r_code: "fit <- glm(y ~ x1 + group, data = df, family = poisson())\nsummary(fit)\n# use MASS::glm.nb(...) for overdispersion",
+        recommended_test: "Count regression (Poisson or negative binomial)",
+        what_it_does:
+            "Models count outcomes from predictors. Start with Poisson when the mean-variance relation is plausible; switch to negative binomial when overdispersion is material.",
+        r_code: "fit_pois <- glm(y ~ x1 + group, data = df, family = poisson())\nsummary(fit_pois)\n\nfit_nb <- MASS::glm.nb(y ~ x1 + group, data = df)\nsummary(fit_nb)",
         python_code:
-            'import statsmodels.formula.api as smf\nfit = smf.poisson("y ~ x1 + C(group)", data=df).fit()\nprint(fit.summary())',
+            'import statsmodels.formula.api as smf\nfit_pois = smf.poisson("y ~ x1 + C(group)", data=df).fit()\nprint(fit_pois.summary())\n\nfit_nb = smf.negativebinomial("y ~ x1 + C(group)", data=df).fit()\nprint(fit_nb.summary())',
         bayes_test: "Bayesian count regression",
         bayes_r_code:
             "library(rstanarm)\nstan_glm(y ~ x1 + group, data = df, family = poisson())",
@@ -757,7 +808,7 @@ const rows = [
             'import bambi as bmb\nmodel = bmb.Model("y ~ x1 + group", df, family="poisson")\nidata = model.fit()',
         effect_sizes: "incidence rate ratios, pseudo-R^2",
         follow_up_questions:
-            "Check overdispersion and zero inflation.",
+            "Check overdispersion first, then decide whether a negative-binomial model is preferable to Poisson. Also inspect zero inflation before treating either model as final.",
         equivalence_option:
             "Define equivalence on log-rate or IRR scale.",
     },
@@ -828,12 +879,12 @@ const rows = [
         route: "",
         status: "resolved",
         recommended_test:
-            "Correlated-data logistic model (GEE / GLMM)",
+            "Correlated-data logistic modeling (GEE for marginal effects; GLMM for subject-specific effects)",
         what_it_does:
-            "Models a binary DV with correlated observations using either a marginal GEE or a subject-specific GLMM.",
+            "Models a binary DV with correlated observations, but the estimand must be chosen first: GEE gives population-average marginal effects, whereas GLMM gives subject-specific conditional effects. These coefficients are not interchangeable.",
         r_code: "# GEE (marginal)\nlibrary(geepack)\nfit_gee <- geeglm(y ~ x1 + group, id = subject, family = binomial(), data = df)\nsummary(fit_gee)\n\n# GLMM (subject-specific)\nlibrary(lme4)\nfit_glmm <- glmer(y ~ x1 + group + (1|subject), family = binomial(), data = df)\nsummary(fit_glmm)",
         python_code:
-            '# GEE (marginal)\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\nfit_gee = smf.gee("y ~ x1 + group", groups="subject", data=df, family=sm.families.Binomial()).fit()\nprint(fit_gee.summary())\n\n# GLMM (subject-specific; Bayesian in statsmodels)\nfrom statsmodels.genmod.bayes_mixed_glm import BinomialBayesMixedGLM\nfit_glmm = BinomialBayesMixedGLM.from_formula(\n    "y ~ x1 + group",\n    {"subject": "0 + C(subject)"},\n    data=df\n).fit_vb()\nprint(fit_glmm.summary())',
+            '# Marginal model (GEE)\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\nfit_gee = smf.gee("y ~ x1 + group", groups="subject", data=df, family=sm.families.Binomial()).fit()\nprint(fit_gee.summary())\n\n# Subject-specific logistic GLMM\n# No standard maintained frequentist Python implementation is recommended here in this app.\n# Prefer the R route shown below (lme4::glmer) or the Bayesian Python route in the Bayes column.',
         bayes_test: "Bayesian logistic mixed model",
         bayes_r_code:
             "library(rstanarm)\nfit_b <- stan_glmer(y ~ x1 + group + (1|subject), data = df, family = binomial())",
@@ -841,7 +892,7 @@ const rows = [
             'import bambi as bmb\nmodel = bmb.Model("y ~ x1 + group + (1|subject)", df, family="bernoulli")\nidata = model.fit()',
         effect_sizes: "Odds ratios, pseudo-R^2",
         follow_up_questions:
-            "Choose whether interpretation should be marginal (GEE) or subject-specific (GLMM); inspect correlation structure and convergence.",
+            "Decide the estimand before fitting the model: marginal GEE for population-average effects or GLMM for subject-specific effects. Also check working-correlation assumptions, separation, and convergence.",
         equivalence_option: "",
     },
     {
@@ -857,12 +908,12 @@ const rows = [
         route: "",
         status: "resolved",
         recommended_test:
-            "Correlated-data count model (GEE / GLMM)",
+            "Correlated-data count modeling (GEE for marginal effects; GLMM for subject-specific effects)",
         what_it_does:
-            "Models a count DV with correlated observations using either a marginal GEE or a subject-specific count mixed model.",
-        r_code: "# GEE count model (marginal)\nlibrary(geepack)\nfit_gee <- geeglm(y ~ x1 + group, id = subject, family = poisson(), data = df)\nsummary(fit_gee)\n\n# Count GLMM (subject-specific)\nlibrary(lme4)\nfit_glmm <- glmer(y ~ x1 + group + (1|subject), family = poisson(), data = df)\nsummary(fit_glmm)",
+            "Models a count DV with correlated observations, but the estimand must be chosen first: GEE gives marginal population-average effects, whereas count GLMMs give subject-specific conditional effects. These are not interchangeable, and overdispersion may require a negative-binomial mixed model rather than Poisson.",
+        r_code: "# GEE count model (marginal)\nlibrary(geepack)\nfit_gee <- geeglm(y ~ x1 + group, id = subject, family = poisson(), data = df)\nsummary(fit_gee)\n\n# Count GLMM (subject-specific)\nlibrary(lme4)\nfit_glmm <- glmer(y ~ x1 + group + (1|subject), family = poisson(), data = df)\nsummary(fit_glmm)\n\n# for overdispersed counts, prefer glmmTMB::glmmTMB(..., family = nbinom2)",
         python_code:
-            '# GEE count model (marginal)\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\nfit_gee = smf.gee("y ~ x1 + group", groups="subject", data=df, family=sm.families.Poisson()).fit()\nprint(fit_gee.summary())\n\n# Count GLMM (subject-specific; Bayesian in statsmodels)\nfrom statsmodels.genmod.bayes_mixed_glm import PoissonBayesMixedGLM\nfit_glmm = PoissonBayesMixedGLM.from_formula(\n    "y ~ x1 + group",\n    {"subject": "0 + C(subject)"},\n    data=df\n).fit_vb()\nprint(fit_glmm.summary())',
+            '# Marginal count model (GEE)\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\nfit_gee = smf.gee("y ~ x1 + group", groups="subject", data=df, family=sm.families.Poisson()).fit()\nprint(fit_gee.summary())\n\n# Subject-specific count GLMM\n# No standard maintained frequentist Python implementation is recommended here in this app.\n# Prefer the R route shown below for Poisson / negative-binomial mixed models, or use the Bayesian Python route in the Bayes column.',
         bayes_test: "Bayesian count mixed model",
         bayes_r_code:
             "library(rstanarm)\nfit_b <- stan_glmer(y ~ x1 + group + (1|subject), data = df, family = poisson())",
@@ -870,7 +921,7 @@ const rows = [
             'import bambi as bmb\nmodel = bmb.Model("y ~ x1 + group + (1|subject)", df, family="poisson")\nidata = model.fit()',
         effect_sizes: "Incidence rate ratios, pseudo-R^2",
         follow_up_questions:
-            "Check overdispersion and choose whether interpretation should be marginal (GEE) or subject-specific (GLMM).",
+            "Choose the estimand first: marginal GEE or subject-specific GLMM. Then inspect overdispersion and zero inflation before deciding whether Poisson is still adequate.",
         equivalence_option: "",
     },
     {
@@ -1005,32 +1056,6 @@ const rows = [
             "Pillai trace / Wilks etc.; then univariate effect sizes",
         follow_up_questions:
             "Check whether the multivariate omnibus is more appropriate than separate outcome models.",
-        equivalence_option: "",
-    },
-    {
-        id: "M04",
-        dv_count: "ge2",
-        dv_kind: "continuous",
-        iv_count: "ge2",
-        iv_kind: "discrete",
-        iv_levels: "2_or_gt2",
-        design: "between",
-        dv_parametric: "no",
-        dv_subtype: "",
-        route: "",
-        status: "resolved",
-        recommended_test: "Distance-based factorial PERMANOVA",
-        what_it_does:
-            "Permutation-based multivariate factorial analysis using a chosen distance matrix.",
-        r_code: "library(vegan)\nadonis2(dist_mat ~ A * B, data = meta)",
-        python_code:
-            "# scikit-bio permanova supports one grouping factor at a time\n# not available: general formula-style factorial PERMANOVA in mainstream Python stats packages\n# for factorial designs, use R vegan::adonis2(...)",
-        bayes_test: "",
-        bayes_r_code: "",
-        bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
-        effect_sizes: "pseudo-R^2",
-        follow_up_questions:
-            "Inspect multivariate dispersion because significant results can reflect dispersion differences as well as centroid differences; choose the distance metric deliberately.",
         equivalence_option: "",
     },
 ];
@@ -1588,7 +1613,7 @@ const posthoc_catalog = {
         repeated_measures: false,
         multiplicity: {
             default: "dunnett",
-            allowed: ["dunnett", "holm", "bonferroni", "mvt"],
+            allowed: ["dunnett"],
         },
         effect_sizes: ["mean_diff", "cohens_d", "hedges_g"],
         output_fields: PROCEDURE_OUTPUT_FIELDS,
@@ -2334,7 +2359,6 @@ function buildRowPosthoc(row) {
                     ),
                     instantiateProcedure(row, "ph_model_treatment_vs_control"),
                     instantiateProcedure(row, "ph_model_custom_contrasts"),
-                    instantiateProcedure(row, "ph_model_trend_tests"),
                 ].filter(Boolean),
             };
         case "A06":
@@ -2350,7 +2374,6 @@ function buildRowPosthoc(row) {
                     instantiateProcedure(row, "ph_model_interaction_slices"),
                     instantiateProcedure(row, "ph_model_treatment_vs_control"),
                     instantiateProcedure(row, "ph_model_custom_contrasts"),
-                    instantiateProcedure(row, "ph_model_trend_tests"),
                 ].filter(Boolean),
             };
         case "A07":
@@ -2400,7 +2423,6 @@ function buildRowPosthoc(row) {
                     instantiateProcedure(row, "ph_model_interaction_slices"),
                     instantiateProcedure(row, "ph_model_treatment_vs_control"),
                     instantiateProcedure(row, "ph_model_custom_contrasts"),
-                    instantiateProcedure(row, "ph_model_trend_tests"),
                 ].filter(Boolean),
             };
         case "D01":
@@ -2476,6 +2498,11 @@ const stageDefs = [
         question: "Is the data of the DV parametric?",
     },
     {
+        key: "analysis_goal",
+        label: "Primary analysis\ngoal?",
+        question: "What is the primary analysis goal on this branch?",
+    },
+    {
         key: "dv_subtype",
         label: "DV subtype",
         question: "Which subtype is the discrete DV?",
@@ -2513,6 +2540,10 @@ function pretty(v) {
         within: "within",
         yes: "yes",
         no: "no",
+        association: "Association",
+        slope_estimation: "Slope / model",
+        robust_estimation: "Robust estimation",
+        permutation_inference: "Permutation inference",
         any: "any",
         binary: "Binary",
         count: "Count",
@@ -3546,6 +3577,575 @@ function codeBlockCard(title, code) {
     return div;
 }
 
+function createSvgElement(tagName, attributes = {}) {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tagName);
+
+    Object.entries(attributes).forEach(([name, value]) => {
+        if (value !== undefined && value !== null) {
+            element.setAttribute(name, String(value));
+        }
+    });
+
+    return element;
+}
+
+function scaleToRange(value, domainMin, domainMax, rangeMin, rangeMax) {
+    if (domainMax === domainMin) {
+        return rangeMin;
+    }
+
+    return rangeMin + ((value - domainMin) / (domainMax - domainMin)) * (rangeMax - rangeMin);
+}
+
+function mapPlotPoint(point, xDomain, yDomain, plotBox) {
+    return {
+        x: scaleToRange(
+            point.x,
+            xDomain.min,
+            xDomain.max,
+            plotBox.left,
+            plotBox.left + plotBox.width,
+        ),
+        y: scaleToRange(
+            point.y,
+            yDomain.min,
+            yDomain.max,
+            plotBox.top + plotBox.height,
+            plotBox.top,
+        ),
+    };
+}
+
+function createMiniPlotFrame(ariaLabel, axisLabels = {}) {
+    const svg = createSvgElement("svg", {
+        viewBox: "0 0 180 140",
+        role: "img",
+        "aria-label": ariaLabel,
+    });
+    const plotBox = {
+        left: 28,
+        top: 14,
+        width: 140,
+        height: 94,
+    };
+
+    svg.style.width = "100%";
+    svg.style.height = "auto";
+    svg.style.display = "block";
+
+    svg.appendChild(
+        createSvgElement("rect", {
+            x: plotBox.left,
+            y: plotBox.top,
+            width: plotBox.width,
+            height: plotBox.height,
+            rx: 12,
+            ry: 12,
+            fill: "#fbfcfe",
+            stroke: "#d5dde8",
+            "stroke-width": 1,
+        }),
+    );
+    svg.appendChild(
+        createSvgElement("line", {
+            x1: plotBox.left,
+            y1: plotBox.top + plotBox.height,
+            x2: plotBox.left + plotBox.width,
+            y2: plotBox.top + plotBox.height,
+            stroke: "#96a4b5",
+            "stroke-width": 1.2,
+        }),
+    );
+    svg.appendChild(
+        createSvgElement("line", {
+            x1: plotBox.left,
+            y1: plotBox.top,
+            x2: plotBox.left,
+            y2: plotBox.top + plotBox.height,
+            stroke: "#96a4b5",
+            "stroke-width": 1.2,
+        }),
+    );
+
+    if (axisLabels.x) {
+        const xLabel = createSvgElement("text", {
+            x: plotBox.left + plotBox.width / 2,
+            y: 132,
+            fill: "#607080",
+            "font-size": 9,
+            "text-anchor": "middle",
+        });
+        xLabel.textContent = axisLabels.x;
+        svg.appendChild(xLabel);
+    }
+
+    if (axisLabels.y) {
+        const yLabel = createSvgElement("text", {
+            x: plotBox.left,
+            y: 10,
+            fill: "#607080",
+            "font-size": 9,
+            "text-anchor": "start",
+        });
+        yLabel.textContent = axisLabels.y;
+        svg.appendChild(yLabel);
+    }
+
+    return {
+        svg,
+        plotBox,
+    };
+}
+
+function createPolylinePoints(points, xDomain, yDomain, plotBox) {
+    return points
+        .map((point) => {
+            const scaled = mapPlotPoint(point, xDomain, yDomain, plotBox);
+            return scaled.x.toFixed(2) + "," + scaled.y.toFixed(2);
+        })
+        .join(" ");
+}
+
+function addScatterSeries(svg, points, xDomain, yDomain, plotBox, fill = "#334155") {
+    points.forEach((point) => {
+        const scaled = mapPlotPoint(point, xDomain, yDomain, plotBox);
+        svg.appendChild(
+            createSvgElement("circle", {
+                cx: scaled.x,
+                cy: scaled.y,
+                r: 3,
+                fill,
+                "fill-opacity": 0.9,
+            }),
+        );
+    });
+}
+
+function normalPdf(x, mu, sigma) {
+    return Math.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+function gaussianCurve(mu, sigma, totalCount, binWidth, xMin, xMax, step) {
+    const points = [];
+
+    for (let x = xMin; x <= xMax; x += step) {
+        points.push({
+            x,
+            y: totalCount * binWidth * normalPdf(x, mu, sigma),
+        });
+    }
+
+    return points;
+}
+
+function createQQExampleSvg(isAcceptable) {
+    const { svg, plotBox } = createMiniPlotFrame("Q-Q plot example", {
+        x: "Theoretical quantiles",
+        y: "Sample quantiles",
+    });
+    const xDomain = { min: -2.2, max: 2.2 };
+    const yDomain = isAcceptable ?
+        { min: -2.2, max: 2.2 } :
+        { min: -2.2, max: 4.4 };
+    const dataPoints = isAcceptable ? [
+        { x: -2.0, y: -1.9 },
+        { x: -1.5, y: -1.45 },
+        { x: -1.0, y: -1.02 },
+        { x: -0.5, y: -0.48 },
+        { x: 0.0, y: 0.02 },
+        { x: 0.5, y: 0.47 },
+        { x: 1.0, y: 1.03 },
+        { x: 1.5, y: 1.52 },
+        { x: 2.0, y: 2.05 },
+    ] : [
+        { x: -2.0, y: -3.0 },
+        { x: -1.5, y: -2.1 },
+        { x: -1.0, y: -1.3 },
+        { x: -0.5, y: -0.6 },
+        { x: 0.0, y: 0.1 },
+        { x: 0.5, y: 0.9 },
+        { x: 1.0, y: 1.9 },
+        { x: 1.5, y: 3.0 },
+        { x: 2.0, y: 4.2 },
+    ];
+
+    svg.appendChild(
+        createSvgElement("polyline", {
+            points: createPolylinePoints(
+                [
+                    { x: -2.1, y: -2.1 },
+                    { x: 2.1, y: 2.1 },
+                ],
+                xDomain,
+                yDomain,
+                plotBox,
+            ),
+            fill: "none",
+            stroke: "#94a3b8",
+            "stroke-width": 1.75,
+            "stroke-dasharray": "5 4",
+        }),
+    );
+    addScatterSeries(svg, dataPoints, xDomain, yDomain, plotBox);
+
+    return svg;
+}
+
+function createResidualsVsFittedExampleSvg(isAcceptable) {
+    const { svg, plotBox } = createMiniPlotFrame("Residuals versus fitted example", {
+        x: "Fitted values",
+        y: "Residuals",
+    });
+    const xDomain = { min: 1, max: 12 };
+    const yDomain = { min: -2.2, max: 2.2 };
+    const dataPoints = isAcceptable ? [
+        { x: 1, y: -0.3 },
+        { x: 2, y: 0.2 },
+        { x: 3, y: -0.2 },
+        { x: 4, y: 0.1 },
+        { x: 5, y: -0.1 },
+        { x: 6, y: 0.3 },
+        { x: 7, y: -0.2 },
+        { x: 8, y: 0.1 },
+        { x: 9, y: -0.25 },
+        { x: 10, y: 0.15 },
+        { x: 11, y: -0.1 },
+        { x: 12, y: 0.05 },
+    ] : [
+        { x: 1, y: -0.2 },
+        { x: 2, y: 0.1 },
+        { x: 3, y: -0.5 },
+        { x: 4, y: 0.4 },
+        { x: 5, y: -0.8 },
+        { x: 6, y: 0.7 },
+        { x: 7, y: -1.1 },
+        { x: 8, y: 0.9 },
+        { x: 9, y: -1.5 },
+        { x: 10, y: 1.4 },
+        { x: 11, y: -1.9 },
+        { x: 12, y: 2.0 },
+    ];
+
+    svg.appendChild(
+        createSvgElement("polyline", {
+            points: createPolylinePoints(
+                [
+                    { x: 1, y: 0 },
+                    { x: 12, y: 0 },
+                ],
+                xDomain,
+                yDomain,
+                plotBox,
+            ),
+            fill: "none",
+            stroke: "#94a3b8",
+            "stroke-width": 1.75,
+            "stroke-dasharray": "5 4",
+        }),
+    );
+    addScatterSeries(svg, dataPoints, xDomain, yDomain, plotBox);
+
+    return svg;
+}
+
+function createHistogramExampleSvg(isAcceptable) {
+    const binCenters = [-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+    const binWidth = 0.5;
+    const xDomain = { min: -3.25, max: 3.25 };
+    const yDomain = { min: 0, max: 12 };
+    const { svg, plotBox } = createMiniPlotFrame("Histogram example", {
+        x: "Residual value",
+        y: "Count",
+    });
+    const series = isAcceptable ? [
+        {
+            label: "A",
+            color: "#54a2eb",
+            counts: [1, 4, 7, 9, 7, 4, 1, 0, 0, 0, 0, 0, 0],
+            mu: -1.5,
+            sigma: 0.55,
+        },
+        {
+            label: "B",
+            color: "#4bc0c0",
+            counts: [0, 0, 0, 1, 4, 7, 9, 7, 4, 1, 0, 0, 0],
+            mu: 0.0,
+            sigma: 0.55,
+        },
+        {
+            label: "C",
+            color: "#ff9f40",
+            counts: [0, 0, 0, 0, 0, 0, 1, 4, 7, 9, 7, 4, 1],
+            mu: 1.5,
+            sigma: 0.55,
+        },
+    ] : [
+        {
+            label: "A",
+            color: "#54a2eb",
+            counts: [5, 1, 8, 2, 6, 1, 4, 0, 3, 1, 2, 0, 1],
+            mu: -1.5,
+            sigma: 0.4,
+        },
+        {
+            label: "B",
+            color: "#4bc0c0",
+            counts: [0, 3, 1, 6, 2, 8, 3, 5, 2, 6, 1, 4, 0],
+            mu: 0.0,
+            sigma: 0.7,
+        },
+        {
+            label: "C",
+            color: "#ff9f40",
+            counts: [2, 0, 4, 1, 0, 5, 2, 1, 6, 2, 8, 3, 5],
+            mu: 1.5,
+            sigma: 0.95,
+        },
+    ];
+    const barWidth = plotBox.width / binCenters.length / 3.4;
+
+    series.forEach((entry, seriesIndex) => {
+        entry.counts.forEach((count, index) => {
+            const centerX = scaleToRange(
+                binCenters[index],
+                xDomain.min,
+                xDomain.max,
+                plotBox.left,
+                plotBox.left + plotBox.width,
+            );
+            const barHeight = scaleToRange(
+                count,
+                yDomain.min,
+                yDomain.max,
+                0,
+                plotBox.height,
+            );
+            const x = centerX + (seriesIndex - 1) * barWidth - barWidth / 2;
+            const y = plotBox.top + plotBox.height - barHeight;
+
+            svg.appendChild(
+                createSvgElement("rect", {
+                    x,
+                    y,
+                    width: barWidth,
+                    height: Math.max(barHeight, 1),
+                    rx: 2,
+                    ry: 2,
+                    fill: entry.color,
+                    "fill-opacity": 0.45,
+                    stroke: entry.color,
+                    "stroke-width": 0.9,
+                }),
+            );
+        });
+
+        const totalCount = entry.counts.reduce((sum, value) => sum + value, 0);
+        svg.appendChild(
+            createSvgElement("polyline", {
+                points: createPolylinePoints(
+                    gaussianCurve(entry.mu, entry.sigma, totalCount, binWidth, -3.2, 3.2, 0.08),
+                    xDomain,
+                    yDomain,
+                    plotBox,
+                ),
+                fill: "none",
+                stroke: entry.color,
+                "stroke-width": 1.7,
+                "stroke-dasharray": "4 3",
+            }),
+        );
+    });
+
+    return svg;
+}
+
+function diagnosticText(guide) {
+    return [guide.secondary_name, guide.secondary_why]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+}
+
+function qqExampleTitle(guide) {
+    const name = (guide.secondary_name || "").toLowerCase();
+
+    if (name.includes("paired differences")) {
+        return "Q-Q plot of paired differences";
+    }
+    if (name.includes("residual q-q")) {
+        return "Residual Q-Q plot";
+    }
+    if (name.includes("each outcome")) {
+        return "Q-Q plots by outcome";
+    }
+    if (name.includes("condition")) {
+        return "Q-Q plots by condition";
+    }
+    if (name.includes("group")) {
+        return "Q-Q plots by group";
+    }
+
+    return "Q-Q plot";
+}
+
+function histogramExampleTitle(guide) {
+    const name = guide.secondary_name || "";
+    const histogramPhrase = name.match(/histograms?[^+]+/i);
+
+    if (/paired differences/i.test(name)) {
+        return "Histogram of paired differences";
+    }
+    if (histogramPhrase) {
+        return histogramPhrase[0].trim();
+    }
+    if (/residual histogram/i.test(name)) {
+        return "Residual histogram";
+    }
+
+    return "Histogram";
+}
+
+function buildParametricVisualExampleSpecs(guide) {
+    const text = diagnosticText(guide);
+    const specs = [];
+
+    if (text.includes("q-q")) {
+        specs.push({
+            key: "qq",
+            title: qqExampleTitle(guide),
+            acceptableCaption:
+                "Points stay close to the reference line without strong tail bends.",
+            concerningCaption:
+                "Strong curvature, tail departures, or isolated jumps suggest non-Gaussian behavior.",
+            render: createQQExampleSvg,
+        });
+    }
+
+    if (text.includes("residuals vs fitted")) {
+        specs.push({
+            key: "rvf",
+            title: "Residuals vs fitted",
+            acceptableCaption:
+                "Residuals stay centered around zero with roughly constant spread.",
+            concerningCaption:
+                "Funnels, trends, or systematic curves suggest heteroskedasticity or nonlinearity.",
+            render: createResidualsVsFittedExampleSvg,
+        });
+    }
+
+    if (text.includes("histogram")) {
+        specs.push({
+            key: "hist",
+            title: histogramExampleTitle(guide),
+            acceptableCaption:
+                "Shapes are roughly symmetric without one group or condition being driven by a few extremes.",
+            concerningCaption:
+                "Skewed, irregular, or outlier-driven shapes weaken the Gaussian route.",
+            render: createHistogramExampleSvg,
+        });
+    }
+
+    return specs;
+}
+
+function createVisualStatusPill(label, isAcceptable) {
+    const pill = document.createElement("div");
+    pill.textContent = label;
+    pill.style.display = "inline-flex";
+    pill.style.alignItems = "center";
+    pill.style.justifyContent = "center";
+    pill.style.padding = "4px 9px";
+    pill.style.borderRadius = "999px";
+    pill.style.fontSize = "12px";
+    pill.style.fontWeight = "700";
+    pill.style.letterSpacing = "0.01em";
+    pill.style.background = isAcceptable ? "#edf7ed" : "#fdeeee";
+    pill.style.color = isAcceptable ? "#1f7a3d" : "#b42318";
+    pill.style.border = isAcceptable ? "1px solid #b7dfbf" : "1px solid #f5c2c7";
+    return pill;
+}
+
+function createParametricVisualExamples(guide) {
+    const specs = buildParametricVisualExampleSpecs(guide);
+
+    if (!specs.length) {
+        return null;
+    }
+
+    const section = document.createElement("div");
+    section.className = "unified-card";
+    section.style.marginTop = "12px";
+
+    const title = document.createElement("h3");
+    title.textContent = "Visual examples";
+    section.appendChild(title);
+
+    const intro = document.createElement("p");
+    intro.textContent =
+        "Use these mini examples as a quick visual reference for the secondary checks listed above.";
+    section.appendChild(intro);
+
+    const grid = document.createElement("div");
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(230px, 1fr))";
+    grid.style.gap = "12px";
+    grid.style.marginTop = "12px";
+
+    specs.forEach((spec) => {
+        const card = document.createElement("div");
+        card.style.minWidth = "0";
+        card.style.padding = "14px";
+        card.style.borderRadius = "16px";
+        card.style.border = "1px solid rgba(49, 74, 103, 0.12)";
+        card.style.background = "#fbfcfe";
+
+        const cardTitle = document.createElement("h3");
+        cardTitle.textContent = spec.title;
+        cardTitle.style.marginBottom = "10px";
+        card.appendChild(cardTitle);
+
+        const compareGrid = document.createElement("div");
+        compareGrid.style.display = "grid";
+        compareGrid.style.gridTemplateColumns = "repeat(auto-fit, minmax(140px, 1fr))";
+        compareGrid.style.gap = "10px";
+
+        [
+            {
+                label: "Acceptable",
+                isAcceptable: true,
+                caption: spec.acceptableCaption,
+            },
+            {
+                label: "Concerning",
+                isAcceptable: false,
+                caption: spec.concerningCaption,
+            },
+        ].forEach((variant) => {
+            const variantWrap = document.createElement("div");
+            variantWrap.style.minWidth = "0";
+
+            const label = createVisualStatusPill(variant.label, variant.isAcceptable);
+            label.style.marginBottom = "8px";
+            variantWrap.appendChild(label);
+            variantWrap.appendChild(spec.render(variant.isAcceptable));
+
+            const caption = document.createElement("p");
+            caption.className = "small";
+            caption.textContent = variant.caption;
+            caption.style.margin = "8px 0 0";
+            variantWrap.appendChild(caption);
+
+            compareGrid.appendChild(variantWrap);
+        });
+
+        card.appendChild(compareGrid);
+        grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    return section;
+}
+
 function renderParametricGuidance() {
     const matchIgnoring = matchingRowsIgnoring("dv_parametric");
     const allowedChoices = optionsForStage("dv_parametric");
@@ -3588,6 +4188,11 @@ function renderParametricGuidance() {
         escapeHtml(guide.secondary_why) + '</p>';
     grid.appendChild(secondaryCard);
     panel.appendChild(grid);
+
+    const visualExamples = createParametricVisualExamples(guide);
+    if (visualExamples) {
+        panel.appendChild(visualExamples);
+    }
 
     panel.appendChild(
         createDecisionBanner(guide.decision, {
@@ -3741,7 +4346,7 @@ function interpretationHint(testName) {
     if (/poisson|negative binomial|count/.test(t))
         return "Interpret exponentiated coefficients as incidence-rate effects and check dispersion or zero inflation if relevant.";
     if (/chi-square|fisher|mcnemar|bowker|stuart-maxwell/.test(t))
-        return "Interpret the association pattern in the table together with the effect size and inspect cell residuals if needed.";
+        return "Interpret the table pattern together with the omnibus statistic and inspect cell residuals or off-diagonal asymmetries when they are substantively important.";
     if (/manova/.test(t))
         return "Interpret the multivariate omnibus first and then move to protected univariate follow-ups if warranted.";
     if (/permanova|permancova/.test(t))
@@ -3893,6 +4498,40 @@ function prettyEffectSize(effectName) {
     return effectSizeLabels[effectName] || effectName || "—";
 }
 
+function prettySourceKind(kind) {
+    const kindLabels = {
+        primary: "primary",
+        official_docs: "official docs",
+        society_guideline: "guideline",
+        secondary: "secondary",
+    };
+    return kindLabels[kind] || kind || "source";
+}
+
+function statsmodelsAdjustMethod(adjustMethod) {
+    const methodMap = {
+        holm: "holm",
+        bonferroni: "bonferroni",
+        BH: "fdr_bh",
+        BY: "fdr_by",
+    };
+    return methodMap[adjustMethod] || String(adjustMethod || "holm").toLowerCase();
+}
+
+function pingouinAdjustMethod(adjustMethod) {
+    const methodMap = {
+        holm: "holm",
+        bonferroni: "bonf",
+        BH: "fdr_bh",
+        BY: "fdr_by",
+    };
+    return methodMap[adjustMethod] || String(adjustMethod || "holm").toLowerCase();
+}
+
+function isEffectNote(effectName) {
+    return /no standard omnibus effect size/i.test(String(effectName || ""));
+}
+
 function prettyEstimateScale(scale) {
     return estimateScaleLabels[scale] || scale || "—";
 }
@@ -4024,12 +4663,17 @@ function createInterpretationSources(sources = []) {
     wrap.className = "interpretation-sources";
     wrap.innerHTML = '<strong>Sources:</strong> ';
     sources.forEach((source, index) => {
-        const link = document.createElement("a");
-        link.href = source.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = source.label;
-        wrap.appendChild(link);
+        const label = `${source.label}${source.kind ? ` [${prettySourceKind(source.kind)}]` : ""}`;
+        const node = source.url
+            ? document.createElement("a")
+            : document.createElement("span");
+        if (source.url) {
+            node.href = source.url;
+            node.target = "_blank";
+            node.rel = "noopener noreferrer";
+        }
+        node.textContent = label;
+        wrap.appendChild(node);
         if (index < sources.length - 1) {
             wrap.appendChild(document.createTextNode(" · "));
         }
@@ -4055,28 +4699,31 @@ function createInterpretationCard(title, lead, headers = [], rows = [], note = "
     return card;
 }
 
-const interpretation_sources = {
-    cohen_summary: {
-        label: "Cohen-style threshold summary (with page refs to Cohen, 1988)",
-        url: "https://bpb-us-w2.wpmucdn.com/sites.gsu.edu/dist/2/9558/files/2023/03/Cohen-on-small-medium-and-large-effect-sizes.pdf",
+// Legacy source set kept only as an internal reference while the UI now uses
+// the curated scientific_interpretation_sources collection below.
+const legacy_interpretation_sources = {
+    cohen_1988: {
+        label: "Cohen (1988), Statistical Power Analysis for the Behavioral Sciences",
+        kind: "primary",
     },
-    cbu_effect: {
-        label: "MRC CBU effect-size rules",
-        url: "https://imaging.mrc-cbu.cam.ac.uk/statswiki/FAQ/effectSize",
+    cohen_1992: {
+        label: "Cohen (1992), A power primer",
+        kind: "primary",
     },
     effectsize_guide: {
-        label: "effectsize interpretation guide",
-        url: "https://easystats.github.io/effectsize/articles/interpret.html",
+        label: "effectsize getting-started guide",
+        url: "https://easystats.github.io/effectsize/articles/effectsize.html",
+        kind: "official_docs",
     },
-    cliffs_delta: {
+    effectsize_interpret_r: {
         label: "effsize: Cliff’s delta thresholds (Romano et al., 2006)",
         url: "https://rdrr.io/github/mtorchiano/effsize/man/cliff.delta.html",
     },
-    kendall_w: {
+    effectsize_interpret_eta_squared: {
         label: "rstatix: Kendall’s W uses Cohen-style cutoffs",
         url: "https://rpkgs.datanovia.com/rstatix/reference/friedman_effsize.html",
     },
-    pvalue_default: {
+    effectsize_interpret_kendalls_w: {
         label: "effectsize: default p-value labels",
         url: "https://www.rdocumentation.org/packages/effectsize/versions/1.0.0/topics/interpret_p",
     },
@@ -4102,81 +4749,149 @@ const interpretation_sources = {
     },
 };
 
+const scientific_interpretation_sources = {
+    cohen_1988: {
+        label: "Cohen (1988), Statistical Power Analysis for the Behavioral Sciences",
+        kind: "primary",
+    },
+    cohen_1992: {
+        label: "Cohen (1992), A power primer",
+        kind: "primary",
+    },
+    field_2013: {
+        label: "Field (2013), Discovering Statistics Using IBM SPSS Statistics",
+        kind: "secondary",
+    },
+    effectsize_getting_started: {
+        label: "effectsize getting-started guide",
+        url: "https://easystats.github.io/effectsize/articles/effectsize.html",
+        kind: "official_docs",
+    },
+    effectsize_interpret_r: {
+        label: "effectsize::interpret_r",
+        url: "https://easystats.github.io/effectsize/reference/interpret_r.html",
+        kind: "official_docs",
+    },
+    effectsize_interpret_eta_squared: {
+        label: "effectsize::interpret_eta_squared",
+        url: "https://easystats.github.io/effectsize/reference/interpret_omega_squared.html",
+        kind: "official_docs",
+    },
+    effectsize_interpret_kendalls_w: {
+        label: "effectsize::interpret_kendalls_w",
+        url: "https://easystats.github.io/effectsize/reference/interpret_kendalls_w.html",
+        kind: "official_docs",
+    },
+    effectsize_interpret_p: {
+        label: "effectsize::interpret_p",
+        url: "https://easystats.github.io/effectsize/reference/interpret_p.html",
+        kind: "official_docs",
+    },
+    effectsize_oddsratio: {
+        label: "effectsize oddsratio reference",
+        url: "https://easystats.github.io/effectsize/reference/oddsratio.html",
+        kind: "official_docs",
+    },
+    romano_2006: {
+        label: "Romano et al. (2006), Cliff's delta thresholds",
+        kind: "primary",
+    },
+    landis_koch_1977: {
+        label: "Landis & Koch (1977), agreement scale",
+        kind: "primary",
+    },
+    apa_reporting: {
+        label: "APA numbers and statistics guide",
+        url: "https://apastyle.apa.org/instructional-aids/numbers-statistics-guide.pdf",
+        kind: "society_guideline",
+    },
+    asa_pvalues: {
+        label: "ASA statement on p-values",
+        url: "https://www.amstat.org/asa/files/pdfs/p-valuestatement.pdf",
+        kind: "society_guideline",
+    },
+    kass_raftery_1995: {
+        label: "Kass & Raftery (1995), Bayes factors",
+        url: "https://www.stat.washington.edu/raftery/Research/PDF/kass1995.pdf",
+        kind: "primary",
+    },
+};
+
 const effectInterpretationProfiles = {
     d_like: {
         kind: "magnitude",
         thresholds: [0.20, 0.50, 0.80],
         labels: ["negligible", "small", "medium", "large"],
         note: "Use the absolute value for the size label.",
-        sources: [interpretation_sources.cohen_summary, interpretation_sources.effectsize_guide],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_getting_started],
     },
     r_like: {
         kind: "magnitude",
         thresholds: [0.10, 0.30, 0.50],
         labels: ["negligible", "small", "medium", "large"],
         note: "Use the absolute value for the size label. This is a correlation-style heuristic.",
-        sources: [interpretation_sources.cbu_effect],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_interpret_r],
     },
     kendall_w_like: {
         kind: "magnitude",
         thresholds: [0.10, 0.30, 0.50],
         labels: ["negligible", "small", "medium", "large"],
         note: "Packages often use Cohen-style cutoffs for Kendall’s W in teaching contexts.",
-        sources: [interpretation_sources.kendall_w],
+        sources: [scientific_interpretation_sources.landis_koch_1977, scientific_interpretation_sources.effectsize_interpret_kendalls_w],
     },
     h_like: {
         kind: "magnitude",
         thresholds: [0.20, 0.50, 0.80],
         labels: ["negligible", "small", "medium", "large"],
         note: "Use the absolute value for the size label.",
-        sources: [interpretation_sources.cbu_effect],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_oddsratio],
     },
     f_like: {
         kind: "magnitude",
         thresholds: [0.10, 0.25, 0.40],
         labels: ["negligible", "small", "medium", "large"],
-        sources: [interpretation_sources.cohen_summary],
+        sources: [scientific_interpretation_sources.cohen_1992],
     },
     f2_like: {
         kind: "magnitude",
         thresholds: [0.02, 0.15, 0.35],
         labels: ["negligible", "small", "medium", "large"],
-        sources: [interpretation_sources.cohen_summary, interpretation_sources.effectsize_guide],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_getting_started],
     },
     eta2_like: {
         kind: "magnitude",
         thresholds: [0.02, 0.13, 0.26],
         labels: ["negligible", "small", "medium", "large"],
         note: "Often used as a rough heuristic for η² or generalized η².",
-        sources: [interpretation_sources.cohen_summary, interpretation_sources.effectsize_guide],
+        sources: [scientific_interpretation_sources.cohen_1992, scientific_interpretation_sources.effectsize_interpret_eta_squared],
     },
     partial_eta2_like: {
         kind: "magnitude",
         thresholds: [0.01, 0.06, 0.14],
         labels: ["negligible", "small", "medium", "large"],
         note: "Common teaching heuristic for partial η² and related ANOVA effect sizes.",
-        sources: [interpretation_sources.cbu_effect, interpretation_sources.effectsize_guide],
+        sources: [scientific_interpretation_sources.field_2013, scientific_interpretation_sources.effectsize_interpret_eta_squared],
     },
     cliffs_delta_like: {
         kind: "magnitude",
         thresholds: [0.147, 0.330, 0.474],
         labels: ["negligible", "small", "medium", "large"],
         note: "Use the absolute value for the size label.",
-        sources: [interpretation_sources.cliffs_delta],
+        sources: [scientific_interpretation_sources.romano_2006, scientific_interpretation_sources.effectsize_getting_started],
     },
     correlation_like: {
         kind: "correlation_fit",
         thresholds: [0.10, 0.30, 0.50],
         labels: ["negligible", "weak", "moderate", "strong", "perfect"],
         note: "Use the absolute value for correlations or standardized slopes.",
-        sources: [interpretation_sources.cohen_summary, interpretation_sources.cbu_effect],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_interpret_r],
     },
     r2_like: {
         kind: "correlation_fit",
         thresholds: [0.02, 0.13, 0.26],
         labels: ["negligible", "weak", "moderate", "strong", "perfect"],
         note: "R²-like measures run from 0 to 1. These cutoffs are Cohen-style heuristics for explained variance.",
-        sources: [interpretation_sources.cohen_summary, interpretation_sources.effectsize_guide],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_getting_started],
     },
     cramers_v: {
         kind: "cramers_v",
@@ -4187,14 +4902,14 @@ const effectInterpretationProfiles = {
             { label: "df = 3", thresholds: [0.06, 0.17, 0.29] },
         ],
         note: "Choose the row that matches the smaller degrees of freedom of the table.",
-        sources: [interpretation_sources.cbu_effect, interpretation_sources.cramers_v_table],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_interpret_r],
     },
     phi_like: {
         kind: "correlation_fit",
         thresholds: [0.10, 0.30, 0.50],
         labels: ["negligible", "weak", "moderate", "strong", "perfect"],
         note: "For 2×2 tables, phi follows the same rough rules as Cramér’s V with df = 1.",
-        sources: [interpretation_sources.cbu_effect],
+        sources: [scientific_interpretation_sources.cohen_1988, scientific_interpretation_sources.effectsize_interpret_r],
     },
 };
 
@@ -4480,6 +5195,13 @@ function getRowStateKey(row) {
 function createEffectNameList(effectNames, sourceType = "row") {
     const wrap = document.createElement("div");
     wrap.className = "effect-name-list";
+    if ((effectNames || []).length === 1 && isEffectNote(effectNames[0])) {
+        const note = document.createElement("div");
+        note.className = "legacy-note";
+        note.textContent = normalizeDisplayEffectName(effectNames[0], sourceType);
+        wrap.appendChild(note);
+        return wrap;
+    }
     (effectNames || []).forEach((name) => {
         const badge = document.createElement("span");
         badge.className = "badge";
@@ -4574,7 +5296,7 @@ function renderInterpretationPanel(options = {}) {
                 ["p ≥ .05", "not enough evidence to reject H0 under a .05 rule"],
             ],
             "Report exact p values when possible. A p value is not an effect size.",
-            [interpretation_sources.pvalue_default, interpretation_sources.pvalue_reporting, interpretation_sources.pvalue_caution],
+            [scientific_interpretation_sources.effectsize_interpret_p, scientific_interpretation_sources.apa_reporting, scientific_interpretation_sources.asa_pvalues],
         )
     );
 
@@ -4606,7 +5328,7 @@ function renderInterpretationPanel(options = {}) {
                     ["< 1/150", "BF10", "very strong support for H0"],
                 ],
                 "Use one direction consistently: either BF10 or BF01.",
-                [interpretation_sources.bayes_kass, interpretation_sources.bayes_kass_pdf],
+                [scientific_interpretation_sources.kass_raftery_1995],
             )
         );
     }
@@ -5183,8 +5905,10 @@ emmeans::contrast(emm, method = "trt.vs.ctrl", ref = "${ctx.control}", adjust = 
   p.adjust.method = "${adjustMethod}"
 )`;
         case "ph_d01_pairwise_prop_test":
-            return `tab <- table(df$dv, df$iv)
-pairwise.prop.test(tab, p.adjust.method = "${adjustMethod}")`;
+            return `tab <- table(df$dv, df$iv)  # assumes a binary outcome by group
+success <- tab[1, ]
+n <- colSums(tab)
+pairwise.prop.test(success, n, p.adjust.method = "${adjustMethod}")`;
         case "ph_d01_pairwise_fisher":
             return `tab <- table(df$dv, df$iv)
 rcompanion::pairwiseNominalIndependence(
@@ -5197,23 +5921,28 @@ rcompanion::pairwiseNominalIndependence(
 out <- chisq.test(tab)
 out$stdres`;
         case "ph_model_pairwise_emmeans":
-            return `# fit = primary model
+            return `# Requires the fitted primary model saved as \`fit\`
+library(emmeans)
 emm <- emmeans::emmeans(fit, ~ ${ctx.target})
 pairs(emm, adjust = "${adjustMethod}")`;
         case "ph_model_simple_effects":
-            return `# fit = primary model
+            return `# Requires the fitted primary model saved as \`fit\`
+library(emmeans)
 emm <- emmeans::emmeans(fit, ~ ${ctx.target} | ${ctx.byText})
 pairs(emm, adjust = "${adjustMethod}")`;
         case "ph_model_interaction_slices":
-            return `# fit = primary model
+            return `# Requires the fitted primary model saved as \`fit\`
+library(emmeans)
 emm <- emmeans::emmeans(fit, ~ ${ctx.target} | ${ctx.byText})
 pairs(emm, adjust = "${adjustMethod}")`;
         case "ph_model_treatment_vs_control":
-            return `# fit = primary model
+            return `# Requires the fitted primary model saved as \`fit\`
+library(emmeans)
 emm <- emmeans::emmeans(fit, ~ ${ctx.target})
 emmeans::contrast(emm, method = "trt.vs.ctrl", ref = "${ctx.control}", adjust = "${adjustMethod}")`;
         case "ph_model_custom_contrasts":
-            return `# fit = primary model
+            return `# Requires the fitted primary model saved as \`fit\`
+library(emmeans)
 emm <- emmeans::emmeans(fit, ~ ${ctx.target})
 emmeans::contrast(
   emm,
@@ -5255,7 +5984,7 @@ dunnett(*treatments, control=control)`;
         case "ph_a07_dunn":
             return `import scikit_posthocs as sp
 
-sp.posthoc_dunn(df, val_col="y", group_col="group", p_adjust="${adjustMethod}")`;
+sp.posthoc_dunn(df, val_col="y", group_col="group", p_adjust="${statsmodelsAdjustMethod(adjustMethod)}")`;
         case "ph_a08_pairwise_wilcoxon":
             return `import pingouin as pg
 
@@ -5265,24 +5994,44 @@ pg.pairwise_tests(
     within="condition",
     subject="subject",
     parametric=False,
-    padjust="${adjustMethod}"
+    padjust="${pingouinAdjustMethod(adjustMethod)}"
 )`;
         case "ph_d01_pairwise_prop_test":
-            return `from statsmodels.stats.proportion import proportions_ztest
+            return `import itertools
+import pandas as pd
+from statsmodels.stats.proportion import proportions_ztest
 from statsmodels.stats.multitest import multipletests
 
-# run one z-test per pair of proportions, then adjust the p values
-pvals = []
-# pvals.append(proportions_ztest(count=[x1, x2], nobs=[n1, n2])[1])
-adj = multipletests(pvals, method="${adjustMethod.lower()}")`;
+tab = pd.crosstab(df["dv"], df["iv"])  # assumes a binary outcome by group
+success_label = tab.index[0]  # replace with the event level you want to compare
+results = []
+
+for left, right in itertools.combinations(tab.columns, 2):
+    count = [tab.loc[success_label, left], tab.loc[success_label, right]]
+    nobs = [tab[left].sum(), tab[right].sum()]
+    stat, p_value = proportions_ztest(count=count, nobs=nobs)
+    results.append({"contrast": f"{left} vs {right}", "p_raw": p_value})
+
+results = pd.DataFrame(results)
+results["p_adj"] = multipletests(results["p_raw"], method="${statsmodelsAdjustMethod(adjustMethod)}")[1]
+print(results)`;
         case "ph_d01_pairwise_fisher":
-            return `from scipy.stats import fisher_exact
+            return `import itertools
+import pandas as pd
+from scipy.stats import fisher_exact
 from statsmodels.stats.multitest import multipletests
 
-# run one Fisher test per pair, then adjust the p values
-pvals = []
-# pvals.append(fisher_exact(table_2x2)[1])
-adj = multipletests(pvals, method="${adjustMethod.lower()}")`;
+tab = pd.crosstab(df["dv"], df["iv"])  # assumes a binary outcome by group
+results = []
+
+for left, right in itertools.combinations(tab.columns, 2):
+    pair_tab = tab.loc[:, [left, right]].to_numpy()
+    _, p_value = fisher_exact(pair_tab)
+    results.append({"contrast": f"{left} vs {right}", "p_raw": p_value})
+
+results = pd.DataFrame(results)
+results["p_adj"] = multipletests(results["p_raw"], method="${statsmodelsAdjustMethod(adjustMethod)}")[1]
+print(results)`;
         case "ph_d01_adjusted_residuals":
             return `import numpy as np
 import pandas as pd
@@ -5292,33 +6041,29 @@ tab = pd.crosstab(df["dv"], df["iv"])
 chi2, p, dof, expected = chi2_contingency(tab)
 std_resid = (tab - expected) / np.sqrt(expected)`;
         case "ph_model_pairwise_emmeans":
-            return `# fit = fitted primary model
-# build model-based predictions for ${ctx.target}
-# compare them pairwise
-# then adjust the p values with statsmodels.stats.multitest.multipletests`;
+            return `# not recommended: no single standard maintained Python engine is used here
+# for model-based estimated marginal means across OLS, GLM, and mixed models
+# prefer the R emmeans route shown below for pairwise contrasts of ${ctx.target}`;
         case "ph_model_simple_effects":
-            return `# fit = fitted primary model
-# estimate model-based values for ${ctx.target}
-# inside each level of ${ctx.byText}
-# then compare them with ${prettyAdjustMethod(adjustMethod)} correction`;
+            return `# not recommended: no single standard maintained Python engine is used here
+# for model-based simple-effects contrasts across OLS, GLM, and mixed models
+# prefer the R emmeans route shown below for ${ctx.target} within ${ctx.byText}`;
         case "ph_model_interaction_slices":
-            return `# fit = fitted primary model
-# estimate model-based values for ${ctx.target}
-# within each slice of ${ctx.byText}
-# then compare them with ${prettyAdjustMethod(adjustMethod)} correction`;
+            return `# not recommended: no single standard maintained Python engine is used here
+# for model-based interaction-slice contrasts across OLS, GLM, and mixed models
+# prefer the R emmeans route shown below for ${ctx.target} within ${ctx.byText}`;
         case "ph_model_treatment_vs_control":
-            return `# fit = fitted primary model
-# estimate model-based values for each level of ${ctx.target}
-# compare each level with the control '${ctx.control}'
-# then adjust the p values with ${prettyAdjustMethod(adjustMethod)}`;
+            return `# not recommended: no single standard maintained Python engine is used here
+# for model-based treatment-versus-control contrasts across OLS, GLM, and mixed models
+# prefer the R emmeans route shown below for ${ctx.target} against '${ctx.control}'`;
         case "ph_model_custom_contrasts":
-            return `# fit = fitted primary model
-# define a custom contrast vector, for example A - B
-# then test it on the fitted model and adjust the p values with ${prettyAdjustMethod(adjustMethod)}`;
+            return `# not recommended: no single standard maintained Python engine is used here
+# for arbitrary model-based custom contrasts across OLS, GLM, and mixed models
+# prefer the R emmeans route shown below for planned contrasts of ${ctx.target}`;
         case "ph_model_trend_tests":
-            return `# fit = fitted primary model
-# for an ordered factor, estimate a linear or polynomial trend
-# then adjust the p values with ${prettyAdjustMethod(adjustMethod)} if needed`;
+            return `# placeholder disabled in the UI: no maintained Python implementation is exposed here
+# for ordered-factor trend contrasts across model classes
+# prefer the R emmeans route if you activate this extension later`;
         default:
             return `# fit = primary model
 # add the post-hoc procedure that matches your selected option`;
@@ -5361,7 +6106,8 @@ effectsize::cramers_v(tab)`;
         case "ph_model_treatment_vs_control":
         case "ph_model_custom_contrasts":
         case "ph_model_trend_tests":
-            return `# Gaussian models: standardized differences from estimated means
+            return `# Requires the fitted primary model saved as \`fit\` and the emmeans object saved as \`emm\`
+# Gaussian models: standardized differences from estimated means
 emmeans::eff_size(emm, sigma = sigma(fit), edf = df.residual(fit))
 
 # GLM / GLMM: use the response scale for odds ratios or rate ratios
@@ -5410,14 +6156,9 @@ association(tab, method="cramer")`;
         case "ph_model_treatment_vs_control":
         case "ph_model_custom_contrasts":
         case "ph_model_trend_tests":
-            return `import numpy as np
-import pingouin as pg
-
-# Gaussian models: one example pair
-pg.compute_effsize(x1, x2, eftype="cohen")
-
-# GLM / GLMM: exponentiate a log-scale contrast for OR or RR
-np.exp(log_contrast)`;
+            return `# not recommended: no single standard maintained Python effect-size workflow is exposed here
+# for model-based marginal means or custom contrasts across OLS, GLM, and mixed models
+# prefer the R route shown below, or compute effect sizes directly from the final reported contrasts`;
         default:
             return `# add the effect size code that matches your selected option`;
     }
@@ -5843,4 +6584,18 @@ function render() {
 }
 applyAnswerState(buildAnswerStateFromUrl());
 render();
+
+/* CHANGE LOG
+ * - technical fixes: removed the duplicate M04 row, added an explicit analysis_goal routing stage,
+ *   and replaced invalid Python adjust-method handling with library-specific mappings
+ * - statistical routes clarified: split A10 and A12 by analysis target, set A15 to LMM as default,
+ *   distinguished GEE versus GLMM estimands in D08 and D09, and tightened ART / permutation wording
+ * - code placeholders resolved: replaced pseudo-code with runnable examples where a maintained route exists,
+ *   or marked the Python route explicitly as not recommended when no standard maintained implementation is used
+ * - sources improved: the UI now uses a curated scientific_interpretation_sources set with trust labels
+ *
+ * TODO(statistics):
+ * - add dedicated routing questions for mixed-ANOVA special cases versus LMM defaults when a broader UI revision is acceptable
+ * - add explicit routing for count-model overdispersion / zero inflation and logistic separation instead of leaving them only as follow-up prompts
+ */
 
