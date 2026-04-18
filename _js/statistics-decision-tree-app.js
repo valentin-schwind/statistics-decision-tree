@@ -2654,13 +2654,48 @@ function matchingRows(ans) {
         ),
     );
 }
+
+function shouldSkipIvLevelsStage(signatureValues = {}) {
+    const signature = [
+        norm(signatureValues.dv_count),
+        norm(signatureValues.dv_kind),
+        norm(signatureValues.iv_count),
+        norm(signatureValues.iv_kind),
+    ].join("|");
+
+    const skippedBranches = new Set([
+        "1|continuous|ge2|discrete",
+        "1|continuous|ge2|both",
+        "ge2|continuous|1|discrete",
+        "ge2|continuous|ge2|discrete",
+        "ge2|continuous|ge2|both",
+    ]);
+
+    return skippedBranches.has(signature);
+}
+
+function shouldAutoResolveIvLevels(ans, values) {
+    if (values.length !== 1 || values[0] === "") {
+        return false;
+    }
+
+    return shouldSkipIvLevelsStage(ans);
+}
+
 function currentStageKey() {
     const match = matchingRows(answers);
     if (match.length === 1) {
         for (const s of stageDefs) {
             if (s.key === "result") continue;
             if (answers[s.key] !== undefined) continue;
-            if (norm(match[0][s.key]) !== "") return s.key;
+            if (norm(match[0][s.key]) === "") continue;
+            if (
+                s.key === "iv_levels" &&
+                shouldAutoResolveIvLevels(answers, [norm(match[0][s.key])])
+            ) {
+                continue;
+            }
+            return s.key;
         }
         return null;
     }
@@ -2672,6 +2707,12 @@ function currentStageKey() {
                 match.map((r) => norm(r[s.key])).filter(Boolean),
             ),
         );
+        if (
+            s.key === "iv_levels" &&
+            shouldAutoResolveIvLevels(answers, vals)
+        ) {
+            continue;
+        }
         if (vals.length) return s.key;
     }
     return null;
@@ -2775,6 +2816,12 @@ function pathForRow(row) {
         }
 
         const v = norm(row[s.key]);
+        if (
+            s.key === "iv_levels" &&
+            shouldSkipIvLevelsStage(row)
+        ) {
+            continue;
+        }
         if (v) out.push({ stage: s.key, value: v });
     }
     return out;
