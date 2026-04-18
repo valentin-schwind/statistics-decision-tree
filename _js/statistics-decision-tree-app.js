@@ -2492,6 +2492,9 @@ const overviewWrap = overviewSvg ? overviewSvg.closest(".overview-wrap") : null;
 const answersEl = document.getElementById("answers");
 const questionArea = document.getElementById("questionArea");
 const resultArea = document.getElementById("resultArea");
+const shareableStageKeys = stageDefs
+    .filter((stage) => stage.key !== "result")
+    .map((stage) => stage.key);
 
 function norm(v) {
     return v === undefined || v === null ? "" : String(v).trim();
@@ -2663,6 +2666,66 @@ function clearFrom(stageKey) {
     for (let i = idx; i < stageDefs.length; i += 1)
         delete answers[stageDefs[i].key];
     selectedResult = null;
+}
+
+function buildAnswerStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const urlAnswers = {};
+
+    for (const stageKey of shareableStageKeys) {
+        const value = norm(params.get(stageKey));
+        if (!value) {
+            continue;
+        }
+        urlAnswers[stageKey] = value;
+    }
+
+    return urlAnswers;
+}
+
+function applyAnswerState(nextAnswers = {}) {
+    for (const key of Object.keys(answers)) {
+        delete answers[key];
+    }
+
+    for (const stage of stageDefs) {
+        if (stage.key === "result") {
+            continue;
+        }
+
+        const value = norm(nextAnswers[stage.key]);
+        if (!value) {
+            continue;
+        }
+
+        const possibleValues = optionsForStage(stage.key);
+        if (!possibleValues.includes(value)) {
+            break;
+        }
+
+        answers[stage.key] = value;
+    }
+}
+
+function syncUrlToAnswers() {
+    const url = new URL(window.location.href);
+    const nextParams = new URLSearchParams(url.search);
+
+    shareableStageKeys.forEach((stageKey) => {
+        nextParams.delete(stageKey);
+        const value = norm(answers[stageKey]);
+        if (value) {
+            nextParams.set(stageKey, value);
+        }
+    });
+
+    const nextSearch = nextParams.toString();
+    const nextUrl =
+        url.pathname +
+        (nextSearch ? `?${nextSearch}` : "") +
+        url.hash;
+
+    window.history.replaceState({}, "", nextUrl);
 }
 
 function pathForRow(row) {
@@ -3502,7 +3565,6 @@ function renderParametricGuidance() {
     const intro = document.createElement("div");
     intro.className = "unified-intro";
     intro.innerHTML =
-        '<div class="section-kicker">Check assumptions</div>' +
         '<h3>' + escapeHtml(guide.title) + '</h3>' +
         '<p>' + escapeHtml(guide.lead) + '</p>';
     panel.appendChild(intro);
@@ -3837,37 +3899,40 @@ function prettyEstimateScale(scale) {
 
 function formatDecisionRuleHTML(text, allowedChoices = []) {
     const allowed = new Set((allowedChoices || []).map((choice) => String(choice).toLowerCase()));
-    let decisionText = String(text || "");
-
-    if (allowed.size === 1 && allowed.has("yes")) {
-        decisionText = decisionText.replace(/\s*Choose no[^.]*\./i, "");
-    }
-
-    if (allowed.size === 1 && allowed.has("no")) {
-        decisionText = decisionText.replace(/\s*Choose yes[^.]*\./i, "");
-    }
-
-    const safe = escapeHtml(decisionText);
     const buildChoiceButton = (choice) => {
         const normalizedChoice = String(choice).toLowerCase();
         const isAllowed = allowed.has(normalizedChoice);
         const disabledAttr = isAllowed ? "" : ' disabled aria-disabled="true"';
         return `<button type="button" class="decision-pill ${normalizedChoice}" data-decision-choice="${normalizedChoice}"${disabledAttr}>Choose ${normalizedChoice}</button>`;
     };
+    const decisionText = String(text || "").trim();
+    const matchYes = decisionText.match(/Choose yes\b([\s\S]*?)(?=Choose no\b|$)/i);
+    const matchNo = decisionText.match(/Choose no\b([\s\S]*?)(?=$)/i);
+    const rows = [];
 
-    return safe
-        .replace(
-            /Choose yes/g,
-            buildChoiceButton("yes"),
-        )
-        .replace(
-            /Choose no/g,
-            buildChoiceButton("no"),
-        )
-        .replace(
-            /\.\s+(?=<button type="button" class="decision-pill no" data-decision-choice="no"(?: disabled aria-disabled="true")?>Choose no<\/button>)/g,
-            ".<br>",
+    if (matchYes && !(allowed.size === 1 && allowed.has("no"))) {
+        rows.push(
+            '<div class="decision-rule-grid">' +
+            `<div class="decision-rule-action">${buildChoiceButton("yes")}</div>` +
+            `<div class="decision-rule-copy">${escapeHtml(matchYes[1].trim().replace(/\.$/, ""))}.</div>` +
+            '</div>',
         );
+    }
+
+    if (matchNo && !(allowed.size === 1 && allowed.has("yes"))) {
+        rows.push(
+            '<div class="decision-rule-grid">' +
+            `<div class="decision-rule-action">${buildChoiceButton("no")}</div>` +
+            `<div class="decision-rule-copy">${escapeHtml(matchNo[1].trim().replace(/\.$/, ""))}.</div>` +
+            '</div>',
+        );
+    }
+
+    if (rows.length) {
+        return rows.join("");
+    }
+
+    return `<div class="decision-rule-copy">${escapeHtml(decisionText)}</div>`;
 }
 
 function applyDecisionRuleChoice(choice) {
@@ -5490,8 +5555,8 @@ function renderResolvedTestPanel(row) {
     const primaryCard = document.createElement("div");
     primaryCard.className = "unified-card";
     primaryCard.innerHTML =
-        '<h3>Primary</h3>' +
-        '<p>' + escapeHtml(row.what_it_does) + '</p>';
+        '<h3>Interpretation focus</h3>' +
+        '<p>' + escapeHtml(interpretationHint(row.recommended_test)) + '</p>';
     topGrid.appendChild(primaryCard);
 
     const optionalCard = document.createElement("div");
@@ -5766,6 +5831,7 @@ function render() {
         return;
     }
 
+    syncUrlToAnswers();
     drawTree();
     renderAnswers();
     renderQuestion();
@@ -5775,5 +5841,6 @@ function render() {
         window.requestAnimationFrame(scrollTreeToActiveStage);
     }
 }
+applyAnswerState(buildAnswerStateFromUrl());
 render();
 

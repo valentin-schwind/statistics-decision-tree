@@ -431,9 +431,9 @@ hr.sep {
     background: linear-gradient(180deg, #f8fbff, #f3f7fd);
     border: 1px solid #d4dfec;
     border-radius: 16px;
-    padding: 1rem 1.1rem;
+    padding: 10px 12px;
     display: grid;
-    gap: 0.65rem;
+    gap: 8px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
@@ -442,18 +442,41 @@ hr.sep {
 }
 
 .decision-title {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #4d6178;
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: var(--header);
     font-weight: 700;
+    line-height: 1.35;
 }
 
 .decision-rule-text {
     color: var(--text);
-    line-height: 1.8;
+    line-height: 1.5;
     font-size: 1rem;
     width: 100%;
+    display: grid;
+    gap: 8px;
+}
+
+.decision-rule-grid {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: start;
+}
+
+.decision-rule-action {
+    min-width: 0;
+}
+
+.decision-rule-action .decision-pill {
+    width: 100%;
+    justify-content: center;
+    margin-right: 0;
+}
+
+.decision-rule-copy {
+    min-width: 0;
 }
 
 .decision-pill {
@@ -875,6 +898,7 @@ hr.sep {
 .effect-interpret-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     margin-top: 8px;
     font-size: 0.88rem;
 }
@@ -891,6 +915,16 @@ hr.sep {
     background: #f1f5f9;
     color: #334155;
     font-weight: 600;
+}
+
+.effect-interpret-table th:first-child,
+.effect-interpret-table td:first-child {
+    width: 40%;
+}
+
+.effect-interpret-table th:last-child,
+.effect-interpret-table td:last-child {
+    width: 60%;
 }
 
 .effect-interpret-note {
@@ -942,6 +976,7 @@ hr.sep {
 .interpretation-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     margin-top: 8px;
     font-size: 0.88rem;
 }
@@ -958,6 +993,16 @@ hr.sep {
     background: #f1f5f9;
     color: #334155;
     font-weight: 600;
+}
+
+.interpretation-table th:first-child,
+.interpretation-table td:first-child {
+    width: 40%;
+}
+
+.interpretation-table th:last-child,
+.interpretation-table td:last-child {
+    width: 60%;
 }
 
 .interpretation-sources {
@@ -1235,6 +1280,11 @@ hr.sep {
     .decision-rule-text {
         font-size: 0.97rem;
     }
+
+    .decision-rule-grid {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+    }
 }
 
 @media (max-width: 767.98px) {
@@ -1282,7 +1332,7 @@ hr.sep {
     }
 
     .decision-banner {
-        padding: 0.9rem;
+        padding: 10px 12px;
     }
 
     .mono {
