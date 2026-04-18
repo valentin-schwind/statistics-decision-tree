@@ -1082,9 +1082,9 @@ hr.sep {
 }
 
 .page-card.decision-tree-page {
-    width: min(100%, 1540px);
+    width: min(100%, 1440px);
     min-width: 0;
-    max-width: 1540px;
+    max-width: 1440px;
 }
 
 .decision-tree-app {
@@ -1122,11 +1122,11 @@ hr.sep {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     overscroll-behavior-x: contain;
-    scrollbar-gutter: stable both-edges;
+    scrollbar-gutter: stable;
 }
 
 #overviewSvg {
-    min-width: 1340px;
+    min-width: 1260px;
 }
 
 .question-box,
@@ -1328,7 +1328,7 @@ hr.sep {
     }
 
     #overviewSvg {
-        min-width: 1280px;
+        min-width: 1200px;
     }
 
     .decision-banner {

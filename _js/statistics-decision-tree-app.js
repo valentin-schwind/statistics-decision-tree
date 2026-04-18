@@ -18,9 +18,10 @@ const rows = [
             "Independent-samples t-test (Welch default)",
         what_it_does:
             "Compares two independent group means on one continuous DV.",
-        r_code: "fit <- t.test(y ~ group, data = df, var.equal = FALSE)",
+        r_code:
+            'fit <- rstatix::t_test(df, y ~ group, var.equal = FALSE, detailed = TRUE)\nfit',
         python_code:
-            "from scipy import stats\nstats.ttest_ind(x1, x2, equal_var=False)",
+            'import pingouin as pg\npg.ttest(x1, x2, paired=False, correction=True)',
         bayes_test: "Bayesian independent-samples t-test",
         bayes_r_code:
             "library(BayesFactor)\nttestBF(formula = y ~ group, data = df)",
@@ -75,9 +76,10 @@ const rows = [
         recommended_test: "Mann-Whitney U test",
         what_it_does:
             "Nonparametric comparison of two independent groups.",
-        r_code: "fit <- wilcox.test(y ~ group, data = df, exact = FALSE)",
+        r_code:
+            'fit <- rstatix::wilcox_test(df, y ~ group, exact = FALSE, detailed = TRUE)\nfit',
         python_code:
-            'from scipy import stats\nstats.mannwhitneyu(x1, x2, alternative="two-sided")',
+            'import pingouin as pg\npg.mwu(x1, x2)',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
@@ -103,7 +105,7 @@ const rows = [
             "Nonparametric paired comparison based on signed ranks.",
         r_code: "fit <- wilcox.test(df$y1, df$y2, paired = TRUE, exact = FALSE)",
         python_code:
-            "from scipy import stats\nstats.wilcoxon(x1, x2)",
+            "import pingouin as pg\npg.wilcoxon(x1, x2)",
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
@@ -127,9 +129,10 @@ const rows = [
         recommended_test: "One-way ANOVA",
         what_it_does:
             "Tests whether at least one independent group mean differs.",
-        r_code: "fit <- aov(y ~ group, data = df)\nsummary(fit)",
+        r_code:
+            'fit <- stats::aov(y ~ group, data = df)\nsummary(fit)\n\n# readable omnibus table\nrstatix::anova_test(data = df, dv = y, between = group)',
         python_code:
-            'import statsmodels.api as sm\nimport statsmodels.formula.api as smf\nfit = smf.ols("y ~ C(group)", data=df).fit()\nsm.stats.anova_lm(fit, typ=2)',
+            'import pingouin as pg\npg.anova(data=df, dv="y", between="group", detailed=True)',
         bayes_test: "Bayesian one-way ANOVA",
         bayes_r_code:
             "library(BayesFactor)\nanovaBF(y ~ group, data = df)",
@@ -188,9 +191,10 @@ const rows = [
         recommended_test: "Kruskal-Wallis test",
         what_it_does:
             "Nonparametric omnibus comparison for more than two independent groups.",
-        r_code: "fit <- kruskal.test(y ~ group, data = df)",
+        r_code:
+            'fit <- rstatix::kruskal_test(df, y ~ group)\nfit',
         python_code:
-            'from scipy import stats\nstats.kruskal(*(d["y"].values for _, d in df.groupby("group")))',
+            'import pingouin as pg\npg.kruskal(data=df, dv="y", between="group")',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
@@ -214,9 +218,10 @@ const rows = [
         recommended_test: "Friedman test",
         what_it_does:
             "Nonparametric omnibus test for repeated measurements across >2 conditions.",
-        r_code: "fit <- friedman.test(y ~ condition | subject, data = df)",
+        r_code:
+            'fit <- rstatix::friedman_test(df, y ~ condition | subject)\nfit',
         python_code:
-            "from scipy import stats\nstats.friedmanchisquare(x1, x2, x3)",
+            'import pingouin as pg\npg.friedman(data=df, dv="y", within="condition", subject="subject")',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
@@ -263,9 +268,8 @@ const rows = [
         iv_levels: "",
         design: "",
         dv_parametric: "no",
-        analysis_goal: "association",
         dv_subtype: "",
-        route: "",
+        route: "association",
         status: "resolved",
         recommended_test: "Spearman rank correlation",
         what_it_does:
@@ -278,7 +282,7 @@ const rows = [
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
         effect_sizes: "Spearman's rho",
         follow_up_questions:
-            "Use this route only when the goal is association. If the goal is slope estimation or prediction, move to the regression route on the next branch instead.",
+            "Use this route only when the goal is association. If the goal is slope estimation or prediction, choose the robust simple regression route instead.",
         equivalence_option: "",
     },
     {
@@ -290,9 +294,8 @@ const rows = [
         iv_levels: "",
         design: "",
         dv_parametric: "no",
-        analysis_goal: "slope_estimation",
         dv_subtype: "",
-        route: "",
+        route: "slope_estimation",
         status: "resolved",
         recommended_test: "Robust simple linear regression",
         what_it_does:
@@ -345,9 +348,8 @@ const rows = [
         iv_levels: "",
         design: "",
         dv_parametric: "no",
-        analysis_goal: "robust_estimation",
         dv_subtype: "",
-        route: "",
+        route: "robust_estimation",
         status: "resolved",
         recommended_test: "Robust multiple regression",
         what_it_does:
@@ -372,9 +374,8 @@ const rows = [
         iv_levels: "",
         design: "",
         dv_parametric: "no",
-        analysis_goal: "permutation_inference",
         dv_subtype: "",
-        route: "",
+        route: "permutation_inference",
         status: "resolved",
         recommended_test: "Permutation multiple regression",
         what_it_does:
@@ -2498,11 +2499,6 @@ const stageDefs = [
         question: "Is the data of the DV parametric?",
     },
     {
-        key: "analysis_goal",
-        label: "Primary analysis\ngoal?",
-        question: "What is the primary analysis goal on this branch?",
-    },
-    {
         key: "dv_subtype",
         label: "DV subtype",
         question: "Which subtype is the discrete DV?",
@@ -2521,7 +2517,8 @@ const questionArea = document.getElementById("questionArea");
 const resultArea = document.getElementById("resultArea");
 const shareableStageKeys = stageDefs
     .filter((stage) => stage.key !== "result")
-    .map((stage) => stage.key);
+    .map((stage) => stage.key)
+    .concat(["route"]);
 
 function norm(v) {
     return v === undefined || v === null ? "" : String(v).trim();
@@ -2540,10 +2537,6 @@ function pretty(v) {
         within: "within",
         yes: "yes",
         no: "no",
-        association: "Association",
-        slope_estimation: "Slope / model",
-        robust_estimation: "Robust estimation",
-        permutation_inference: "Permutation inference",
         any: "any",
         binary: "Binary",
         count: "Count",
@@ -2696,6 +2689,7 @@ function clearFrom(stageKey) {
     const idx = stageDefs.findIndex((s) => s.key === stageKey);
     for (let i = idx; i < stageDefs.length; i += 1)
         delete answers[stageDefs[i].key];
+    delete answers.route;
     selectedResult = null;
 }
 
@@ -2735,6 +2729,16 @@ function applyAnswerState(nextAnswers = {}) {
         }
 
         answers[stage.key] = value;
+    }
+
+    const routeValue = norm(nextAnswers.route);
+    if (routeValue) {
+        const routeChoices = matchingRows(answers)
+            .map((row) => norm(row.route))
+            .filter(Boolean);
+        if (routeChoices.includes(routeValue)) {
+            answers.route = routeValue;
+        }
     }
 }
 
@@ -3002,7 +3006,7 @@ function handleNodeClick(node) {
     render();
 }
 function drawTree() {
-    const width = Math.max(1340, layout.maxX + 180);
+    const width = Math.max(1280, layout.maxX + 140);
     const height = Math.max(500, layout.maxY + 48);
     overviewSvg.setAttribute(
         "viewBox",
@@ -3193,7 +3197,9 @@ function drawTree() {
 }
 function renderAnswers() {
     answersEl.innerHTML = "";
-    const active = Object.entries(answers);
+    const active = Object.entries(answers).filter(([key]) =>
+        stageDefs.some((stage) => stage.key === key),
+    );
     if (!active.length) {
         return;
     }
@@ -3236,6 +3242,12 @@ function scrollToSection(target, behavior = "smooth") {
 function renderQuestion() {
     const key = currentStageKey();
     if (!key) {
+        const match = matchingRows(answers);
+        if (routeChooserConfig(match)) {
+            questionArea.innerHTML =
+                '<p class="small">The tree path is complete. Choose the matching analysis target in the result panel below.</p>';
+            return;
+        }
         questionArea.innerHTML =
             '<p class="small">All required questions for the current route are answered.</p>';
         return;
@@ -3347,7 +3359,7 @@ const parametricGuidance = {
         secondary_py:
             'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ C(group)", data=df).fit()\nsm.qqplot(fit.resid, line="45")\nplt.title("Residual Q-Q plot")\nplt.show()\n\ngroups = list(df["group"].dropna().unique())\nfig, axes = plt.subplots(1, len(groups), figsize=(5 * len(groups), 4), squeeze=False)\nfor idx, g in enumerate(groups):\n    values = df.loc[df["group"] == g, "y"].dropna()\n    axes[0, idx].hist(values, bins="auto", color="#90caf9", edgecolor="white")\n    axes[0, idx].set_title(f"Histogram: {g}")\n    axes[0, idx].set_xlabel("y")\nplt.tight_layout()',
         decision:
-            "Choose yes when residuals are approximately normal and variances are not badly unequal. If normality is acceptable but variances differ, a Welch ANOVA may be preferable to classical ANOVA.",
+            "Choose yes when residuals are approximately normal and variances are not badly unequal. If normality is acceptable but variances differ, a Welch ANOVA may still be preferable to classical ANOVA. Choose no when the group distributions or residuals are clearly non-Gaussian or strongly outlier-driven, so the rank-based Kruskal-Wallis route is more defensible.",
     },
     rm_anova: {
         title: "Check whether the repeated-measures design supports the parametric route",
@@ -3632,20 +3644,6 @@ function createMiniPlotFrame(ariaLabel, axisLabels = {}) {
     svg.style.width = "100%";
     svg.style.height = "auto";
     svg.style.display = "block";
-
-    svg.appendChild(
-        createSvgElement("rect", {
-            x: plotBox.left,
-            y: plotBox.top,
-            width: plotBox.width,
-            height: plotBox.height,
-            rx: 12,
-            ry: 12,
-            fill: "#fbfcfe",
-            stroke: "#d5dde8",
-            "stroke-width": 1,
-        }),
-    );
     svg.appendChild(
         createSvgElement("line", {
             x1: plotBox.left,
@@ -3758,10 +3756,8 @@ function createQQExampleSvg(isAcceptable) {
         { x: 1.5, y: 1.52 },
         { x: 2.0, y: 2.05 },
     ] : [
-        { x: -2.0, y: -3.0 },
         { x: -1.5, y: -2.1 },
         { x: -1.0, y: -1.3 },
-        { x: -0.5, y: -0.6 },
         { x: 0.0, y: 0.1 },
         { x: 0.5, y: 0.9 },
         { x: 1.0, y: 1.9 },
@@ -4146,6 +4142,299 @@ function createParametricVisualExamples(guide) {
     return section;
 }
 
+function createConfidenceIntervalBadge(label, tone) {
+    const badge = document.createElement("div");
+    const palette = {
+        positive: {
+            background: "#edf7ed",
+            color: "#1f7a3d",
+            border: "#b7dfbf",
+        },
+        neutral: {
+            background: "#f5f7fb",
+            color: "#526476",
+            border: "#d7dee8",
+        },
+        negative: {
+            background: "#fdeeee",
+            color: "#b42318",
+            border: "#f5c2c7",
+        },
+    };
+    const selectedPalette = palette[tone] || palette.neutral;
+
+    badge.textContent = label;
+    badge.style.display = "inline-flex";
+    badge.style.alignItems = "center";
+    badge.style.justifyContent = "center";
+    badge.style.padding = "4px 9px";
+    badge.style.borderRadius = "999px";
+    badge.style.fontSize = "12px";
+    badge.style.fontWeight = "700";
+    badge.style.letterSpacing = "0.01em";
+    badge.style.background = selectedPalette.background;
+    badge.style.color = selectedPalette.color;
+    badge.style.border = "1px solid " + selectedPalette.border;
+    return badge;
+}
+
+function createConfidenceIntervalExampleSvg(example) {
+    const svg = createSvgElement("svg", {
+        viewBox: "0 0 160 156",
+        role: "img",
+        "aria-label": example.label,
+    });
+    const plotBox = {
+        left: 26,
+        top: 12,
+        width: 116,
+        height: 110,
+    };
+    const yDomain = { min: 0, max: 10 };
+    const labels = ["A", "B"];
+    const barPositions = [62, 106];
+    const barWidth = 22;
+
+    svg.style.width = "100%";
+    svg.style.height = "auto";
+    svg.style.display = "block";
+
+    svg.appendChild(
+        createSvgElement("line", {
+            x1: plotBox.left,
+            y1: plotBox.top + plotBox.height,
+            x2: plotBox.left + plotBox.width,
+            y2: plotBox.top + plotBox.height,
+            stroke: "#96a4b5",
+            "stroke-width": 1.2,
+        }),
+    );
+    svg.appendChild(
+        createSvgElement("line", {
+            x1: plotBox.left,
+            y1: plotBox.top,
+            x2: plotBox.left,
+            y2: plotBox.top + plotBox.height,
+            stroke: "#96a4b5",
+            "stroke-width": 1.2,
+        }),
+    );
+
+    example.values.forEach((value, index) => {
+        const error = example.errors[index];
+        const centerX = barPositions[index];
+        const barHeight = scaleToRange(value, yDomain.min, yDomain.max, 0, plotBox.height);
+        const barTop = plotBox.top + plotBox.height - barHeight;
+        const errorTop = scaleToRange(
+            error.high,
+            yDomain.min,
+            yDomain.max,
+            plotBox.top + plotBox.height,
+            plotBox.top,
+        );
+        const errorBottom = scaleToRange(
+            error.low,
+            yDomain.min,
+            yDomain.max,
+            plotBox.top + plotBox.height,
+            plotBox.top,
+        );
+
+        svg.appendChild(
+            createSvgElement("rect", {
+                x: centerX - barWidth / 2,
+                y: barTop,
+                width: barWidth,
+                height: Math.max(barHeight, 1),
+                fill: "#c7d0db",
+                stroke: "#546576",
+                "stroke-width": 1.1,
+            }),
+        );
+        svg.appendChild(
+            createSvgElement("line", {
+                x1: centerX,
+                y1: errorTop,
+                x2: centerX,
+                y2: errorBottom,
+                stroke: "#546576",
+                "stroke-width": 1.5,
+            }),
+        );
+        svg.appendChild(
+            createSvgElement("line", {
+                x1: centerX - 5,
+                y1: errorTop,
+                x2: centerX + 5,
+                y2: errorTop,
+                stroke: "#546576",
+                "stroke-width": 1.5,
+            }),
+        );
+        svg.appendChild(
+            createSvgElement("line", {
+                x1: centerX - 5,
+                y1: errorBottom,
+                x2: centerX + 5,
+                y2: errorBottom,
+                stroke: "#546576",
+                "stroke-width": 1.5,
+            }),
+        );
+
+        const label = createSvgElement("text", {
+            x: centerX,
+            y: 144,
+            fill: "#526476",
+            "font-size": 11,
+            "font-weight": 700,
+            "text-anchor": "middle",
+        });
+        label.textContent = labels[index];
+        svg.appendChild(label);
+    });
+
+    return svg;
+}
+
+function shouldShowConfidenceIntervalExamples(options = {}) {
+    const {
+        estimateScale = "",
+        sourceType = "row",
+        rowId = "",
+        testName = "",
+        procedureId = "",
+    } = options;
+
+    if (estimateScale !== "difference") {
+        return false;
+    }
+
+    if (sourceType === "posthoc") {
+        return [
+            "ph_a05_tukey_hsd",
+            "ph_a05_games_howell",
+            "ph_a05_dunnett",
+            "ph_model_pairwise_emmeans",
+            "ph_model_simple_effects",
+            "ph_model_interaction_slices",
+            "ph_model_treatment_vs_control",
+            "ph_model_custom_contrasts",
+        ].includes(procedureId);
+    }
+
+    if (["A01", "A02", "A05", "A06", "A13", "A14", "A17", "A18"].includes(rowId)) {
+        return true;
+    }
+
+    return /t-test|anova|ancova/i.test(String(testName || ""));
+}
+
+function createConfidenceIntervalExamplesCard(options = {}) {
+    if (!shouldShowConfidenceIntervalExamples(options)) {
+        return null;
+    }
+
+    const examples = [
+        {
+            label: "Clear separation of group means",
+            values: [6.6, 3.1],
+            errors: [
+                { low: 6.0, high: 7.2 },
+                { low: 2.5, high: 3.7 },
+            ],
+            badge: "clear separation",
+            tone: "positive",
+            caption: "A clear gap between the 95% CIs supports a visible difference.",
+        },
+        {
+            label: "Wide intervals with some overlap",
+            values: [6.6, 3.1],
+            errors: [
+                { low: 4.2, high: 9.0 },
+                { low: 0.7, high: 5.5 },
+            ],
+            badge: "inconclusive",
+            tone: "neutral",
+            caption: "Wide intervals mean low precision. Visual overlap alone is not a formal hypothesis test.",
+        },
+        {
+            label: "One mean inside the other interval",
+            values: [6.6, 4.6],
+            errors: [
+                { low: 5.9, high: 7.3 },
+                { low: 2.0, high: 7.2 },
+            ],
+            badge: "inconclusive",
+            tone: "neutral",
+            caption: "One mean can fall inside the other CI. Read this as uncertainty, not as proof of equality.",
+        },
+        {
+            label: "Strong overlap of intervals",
+            values: [6.5, 5.2],
+            errors: [
+                { low: 4.1, high: 8.9 },
+                { low: 3.0, high: 7.4 },
+            ],
+            badge: "little visual separation",
+            tone: "negative",
+            caption: "Heavy overlap makes a clear visual difference unlikely from the plotted means alone.",
+        },
+    ];
+
+    const card = document.createElement("div");
+    card.className = "effect-interpret-card";
+    card.style.gridColumn = "1 / -1";
+
+    const title = document.createElement("h4");
+    title.textContent = "Confidence-interval examples";
+    card.appendChild(title);
+
+    const lead = document.createElement("p");
+    lead.textContent =
+        options.sourceType === "posthoc"
+            ? "Use these plots as a quick heuristic for mean-difference style contrasts. For post-hoc results, rely on the directly reported contrast CI, especially after multiplicity adjustment."
+            : "Use these plots as a quick heuristic for comparing two means or two planned mean-like contrasts. CI overlap alone is not an exact significance test.";
+    card.appendChild(lead);
+
+    const note = document.createElement("p");
+    note.className = "legacy-note";
+    note.textContent =
+        "Read the point estimate together with the interval width. Narrower intervals mean more precision; wider intervals mean more uncertainty.";
+    card.appendChild(note);
+
+    const grid = document.createElement("div");
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(160px, 1fr))";
+    grid.style.gap = "10px";
+    grid.style.marginTop = "12px";
+
+    examples.forEach((example) => {
+        const exampleCard = document.createElement("div");
+        exampleCard.style.minWidth = "0";
+        exampleCard.style.padding = "12px";
+        exampleCard.style.border = "1px solid #d8e0ea";
+        exampleCard.style.borderRadius = "12px";
+        exampleCard.style.background = "#fbfcfe";
+
+        const badge = createConfidenceIntervalBadge(example.badge, example.tone);
+        badge.style.marginBottom = "8px";
+        exampleCard.appendChild(badge);
+        exampleCard.appendChild(createConfidenceIntervalExampleSvg(example));
+
+        const caption = document.createElement("p");
+        caption.className = "small";
+        caption.textContent = example.caption;
+        caption.style.margin = "8px 0 0";
+        exampleCard.appendChild(caption);
+
+        grid.appendChild(exampleCard);
+    });
+
+    card.appendChild(grid);
+    return card;
+}
+
 function renderParametricGuidance() {
     const matchIgnoring = matchingRowsIgnoring("dv_parametric");
     const allowedChoices = optionsForStage("dv_parametric");
@@ -4225,6 +4514,13 @@ function renderParametricGuidance() {
 
 function effectProfile(testName) {
     const t = testName.toLowerCase();
+    if (
+        /aligned rank transform|art\b|stuart-maxwell|bowker|marginal homogeneity|symmetry test/.test(
+            t,
+        )
+    ) {
+        return { label: "", r: "", py: "" };
+    }
     const specs = [
         {
             pattern: "independent-samples t-test|welch",
@@ -4308,9 +4604,9 @@ function effectProfile(testName) {
         },
         {
             pattern: "art anova",
-            label: "contrast-based effect sizes or R^2-like summaries",
-            r: "# report ART contrasts and the chosen effect-size strategy explicitly",
-            py: "# effect sizes depend on the ART implementation used",
+            label: "",
+            r: "",
+            py: "",
         },
     ];
     for (const spec of specs) {
@@ -4353,6 +4649,11 @@ function interpretationHint(testName) {
         return "Interpret the omnibus pseudo-R^2 carefully and consider whether follow-up contrasts or dispersion checks are needed.";
     return "Interpret the primary parameter estimate, uncertainty interval, and the matching effect-size metric together.";
 }
+
+function hasOnlyEffectNote(effectNames = []) {
+    return effectNames.length === 1 && isEffectNote(effectNames[0]);
+}
+
 function reportingTip(r) {
     const base =
         "Report the chosen model, the main test statistic, p value or Bayes factor if applicable, confidence interval where available, and the selected effect-size measure(s).";
@@ -5275,11 +5576,14 @@ function renderInterpretationPanel(options = {}) {
         sourceType = "row",
         includeBayes = false,
         estimateScale = "",
+        rowId = "",
+        testName = "",
+        procedureId = "",
     } = options;
 
     const panel = document.createElement("div");
     panel.className = "interpretation-panel";
-    panel.innerHTML = '<p>Use these tables as quick reporting help. They do not replace subject-matter interpretation.</p>';
+    panel.innerHTML = '<p>Use these tables and visual examples as quick reporting help. They do not replace subject-matter interpretation.</p>';
 
     const grid = document.createElement("div");
     grid.className = "effect-interpret-grid";
@@ -5303,6 +5607,17 @@ function renderInterpretationPanel(options = {}) {
     const scaleInfo = getEstimateScaleInterpretation(estimateScale);
     if (scaleInfo) {
         grid.appendChild(createInterpretationCard(scaleInfo.title, scaleInfo.lead, scaleInfo.headers, scaleInfo.rows, scaleInfo.note));
+    }
+
+    const confidenceIntervalCard = createConfidenceIntervalExamplesCard({
+        estimateScale,
+        sourceType,
+        rowId,
+        testName,
+        procedureId,
+    });
+    if (confidenceIntervalCard) {
+        grid.appendChild(confidenceIntervalCard);
     }
 
     const effectSection = renderEffectInterpretationSection(effectNames, sourceType);
@@ -5455,8 +5770,8 @@ function chooseDefaultProcedure(row) {
         preferredIds.push("ph_d01_pairwise_prop_test");
     } else {
         preferredIds.push(
-            "ph_model_pairwise_emmeans",
             "ph_model_simple_effects",
+            "ph_model_pairwise_emmeans",
             "ph_model_interaction_slices",
             "ph_model_treatment_vs_control",
             "ph_model_custom_contrasts",
@@ -6281,6 +6596,9 @@ pg.tost(x1, x2, bound=(lower, upper), paired=True)`;
 function renderResolvedTestPanel(row) {
     const panel = document.createElement("div");
     panel.className = "unified-panel";
+    const effectNames = effectItemsForRow(row);
+    const eff = effectProfile(row.recommended_test);
+    const showEffectCodeExamples = !hasOnlyEffectNote(effectNames);
 
     const intro = document.createElement("div");
     intro.className = "unified-intro";
@@ -6316,10 +6634,8 @@ function renderResolvedTestPanel(row) {
 
     const effectCard = document.createElement("div");
     effectCard.className = "unified-card";
-    effectCard.innerHTML =
-        '<h3>Effect sizes</h3>' +
-        '<p>You can use the matching effect sizes for this test.</p>';
-    effectCard.appendChild(createEffectNameList(effectItemsForRow(row), "row"));
+    effectCard.innerHTML = '<h3>Effect sizes</h3>';
+    effectCard.appendChild(createEffectNameList(effectNames, "row"));
     panel.appendChild(effectCard);
 
     const extraCard = document.createElement("div");
@@ -6333,11 +6649,22 @@ function renderResolvedTestPanel(row) {
     extraCard.appendChild(extraGrid);
     panel.appendChild(extraCard);
 
-    const eff = effectProfile(row.recommended_test);
     const codeGrid = document.createElement("div");
     codeGrid.className = "code-grid";
-    codeGrid.appendChild(codeCard("R", row.r_code || "# not available", eff.r));
-    codeGrid.appendChild(codeCard("Python", row.python_code || "# not available", eff.py));
+    codeGrid.appendChild(
+        codeCard(
+            "R",
+            row.r_code || "# not available",
+            showEffectCodeExamples ? eff.r : "",
+        ),
+    );
+    codeGrid.appendChild(
+        codeCard(
+            "Python",
+            row.python_code || "# not available",
+            showEffectCodeExamples ? eff.py : "",
+        ),
+    );
     if (row.bayes_test) {
         codeGrid.appendChild(codeCard("Bayes R", row.bayes_r_code || "# not available", ""));
         codeGrid.appendChild(codeCard("Bayes Python", row.bayes_python_code || "# not available", ""));
@@ -6350,13 +6677,139 @@ function renderResolvedTestPanel(row) {
 
     panel.appendChild(
         renderInterpretationPanel({
-            effectNames: effectItemsForRow(row),
+            effectNames,
             sourceType: "row",
             includeBayes: Boolean(row.bayes_test),
             estimateScale: row.estimate_scale || "",
+            rowId: row.id,
+            testName: row.recommended_test,
         })
     );
 
+    return panel;
+}
+
+function sameRowSet(match, expectedIds) {
+    const matchIds = match
+        .map((row) => row.id)
+        .sort()
+        .join("|");
+    const expected = [...expectedIds].sort().join("|");
+    return matchIds === expected;
+}
+
+function routeChooserConfig(match) {
+    if (sameRowSet(match, ["A10", "A10b"])) {
+        return {
+            title: "Choose the analysis target for this branch",
+            lead:
+                "The visible tree path is the same here, but two different analysis goals are possible. Choose correlation when you only want to quantify monotonic association. Choose regression when you want a directional slope model.",
+            options: [
+                {
+                    route: "association",
+                    label: "Association only",
+                    description:
+                        "Spearman rank correlation for monotonic association without a slope model.",
+                    rowId: "A10",
+                },
+                {
+                    route: "slope_estimation",
+                    label: "Slope / prediction",
+                    description:
+                        "Robust simple linear regression when the goal is coefficient estimation or prediction under weak Gaussian assumptions.",
+                    rowId: "A10b",
+                },
+            ],
+        };
+    }
+
+    if (sameRowSet(match, ["A12", "A12b"])) {
+        return {
+            title: "Choose the regression target for this branch",
+            lead:
+                "The study design is the same on this branch, but the inferential target is different. Choose robust regression for coefficient estimation under outliers or heavy tails. Choose permutation regression when the main goal is permutation-based inference.",
+            options: [
+                {
+                    route: "robust_estimation",
+                    label: "Robust estimation",
+                    description:
+                        "Robust multiple regression for outlier-resistant coefficient estimation.",
+                    rowId: "A12",
+                },
+                {
+                    route: "permutation_inference",
+                    label: "Permutation inference",
+                    description:
+                        "Permutation multiple regression when the main focus is weak-assumption p values or confidence assessment.",
+                    rowId: "A12b",
+                },
+            ],
+        };
+    }
+
+    return null;
+}
+
+function chooseLocalRoute(routeValue) {
+    if (!routeValue) {
+        return;
+    }
+
+    answers.route = routeValue;
+    selectedResult = null;
+    pendingResultScroll = true;
+    pendingAssumptionScroll = false;
+    pendingTreeViewportScroll = false;
+    render();
+    scrollToSection("resultArea");
+}
+
+function renderRouteChooserPanel(match) {
+    const config = routeChooserConfig(match);
+
+    if (!config) {
+        return null;
+    }
+
+    const panel = document.createElement("div");
+    panel.className = "unified-panel";
+
+    const intro = document.createElement("div");
+    intro.className = "unified-intro";
+    intro.innerHTML =
+        '<h3>' + escapeHtml(config.title) + '</h3>' +
+        '<p>' + escapeHtml(config.lead) + '</p>';
+    panel.appendChild(intro);
+
+    const grid = document.createElement("div");
+    grid.className = "unified-grid";
+
+    config.options.forEach((option) => {
+        const row = match.find((candidate) => candidate.id === option.rowId);
+        if (!row) {
+            return;
+        }
+
+        const card = document.createElement("div");
+        card.className = "unified-card";
+        card.innerHTML =
+            '<h3>' + escapeHtml(row.recommended_test) + '</h3>' +
+            '<p><strong>' + escapeHtml(option.label) + '</strong><br>' +
+            escapeHtml(option.description) + '</p>';
+
+        const buttonRow = document.createElement("div");
+        buttonRow.className = "choice-row";
+        buttonRow.appendChild(
+            createChoiceChip("Use this route", {
+                selected: answers.route === option.route,
+                onClick: () => chooseLocalRoute(option.route),
+            }),
+        );
+        card.appendChild(buttonRow);
+        grid.appendChild(card);
+    });
+
+    panel.appendChild(grid);
     return panel;
 }
 
@@ -6366,7 +6819,6 @@ function renderPosthocPanel(row) {
     const state = getPosthocState(row);
     const selectedProcedure = getProcedureById(row, state.procedure_id);
     if (!selectedProcedure) return null;
-    const familyMeta = getProcedureFamilyMeta(selectedProcedure);
     const panel = document.createElement("div");
     panel.className = "unified-panel";
 
@@ -6384,7 +6836,7 @@ function renderPosthocPanel(row) {
     const optionsCard = document.createElement("div");
     optionsCard.className = "unified-card";
     optionsCard.innerHTML =
-        '<h3>Primary and optional checks</h3>' +
+        '<h3>Available checks</h3>' +
         '<p>Choose a post-hoc method.</p>';
 
     const procedureRow = document.createElement("div");
@@ -6447,10 +6899,10 @@ function renderPosthocPanel(row) {
 
     const effectCard = document.createElement("div");
     effectCard.className = "unified-card";
-    effectCard.innerHTML =
-        '<h3>Effect sizes</h3>' +
-        '<p>You can use the matching effect sizes for this test.</p>';
-    effectCard.appendChild(createEffectNameList(selectedProcedure.effect_sizes || [], "posthoc"));
+    effectCard.innerHTML = '<h3>Effect sizes</h3>';
+    effectCard.appendChild(
+        createEffectNameList(selectedProcedure.effect_sizes || [], "posthoc"),
+    );
     panel.appendChild(effectCard);
 
     const codeGrid = document.createElement("div");
@@ -6465,48 +6917,11 @@ function renderPosthocPanel(row) {
             sourceType: "posthoc",
             includeBayes: false,
             estimateScale: selectedProcedure.estimate_scale || row.estimate_scale || "",
+            rowId: row.id,
+            testName: row.recommended_test,
+            procedureId: selectedProcedure.id,
         })
     );
-
-    const metadataBody = document.createElement('div');
-    const metadataLead = document.createElement('p');
-    metadataLead.textContent = 'These fields control which contrasts and outputs are available.';
-    metadataBody.appendChild(metadataLead);
-    const metadataGrid = document.createElement('div');
-    metadataGrid.className = 'posthoc-meta';
-    [
-        ['Model class', row.model_class || '—'],
-        ['Target term', selectedProcedure.target_term || row.target_factor || '—'],
-        ['By-factors', (selectedProcedure.by_factors || []).length ? selectedProcedure.by_factors.join(', ') : 'none'],
-        ['Family scope', (familyMeta && familyMeta.family_scope) || row.posthoc.family_scope || '—'],
-        ['Link / family', [row.link_family, row.response_distribution].filter(Boolean).join(' / ') || '—'],
-        ['Cross-adjust', familyMeta && familyMeta.cross_adjust_supported ? 'supported' : 'not supported'],
-    ].forEach(([label, value]) => metadataGrid.appendChild(createMetaItem(label, value)));
-    metadataBody.appendChild(metadataGrid);
-    const note = document.createElement('p');
-    note.className = 'legacy-note';
-    note.textContent = selectedProcedure.notes || row.follow_up_questions || '';
-    metadataBody.appendChild(note);
-
-    const outputBody = document.createElement('div');
-    const outputLead = document.createElement('p');
-    outputLead.textContent = 'This table shows the fields that should be reported for each contrast.';
-    outputBody.appendChild(outputLead);
-    outputBody.appendChild(renderContrastOutputTable(row, selectedProcedure, state.adjust_method));
-    const footnote = document.createElement('div');
-    footnote.className = 'table-footnote';
-    footnote.textContent = 'This is only a preview of the output structure. Real values appear after fitting the model and running the selected post-hoc method.';
-    outputBody.appendChild(footnote);
-
-    const supplementalAccordion = document.createElement("div");
-    supplementalAccordion.className = "accordion app-accordion";
-    supplementalAccordion.appendChild(
-        createAccordionItem("Contrast metadata", metadataBody),
-    );
-    supplementalAccordion.appendChild(
-        createAccordionItem("Contrast output", outputBody),
-    );
-    panel.appendChild(supplementalAccordion);
 
     return panel;
 }
@@ -6532,6 +6947,13 @@ function renderResult() {
             });
             pendingAssumptionScroll = false;
         }
+        return;
+    }
+
+    const routeChooser = !key ? renderRouteChooserPanel(match) : null;
+    if (routeChooser) {
+        resultArea.innerHTML = "";
+        resultArea.appendChild(routeChooser);
         return;
     }
 
@@ -6586,8 +7008,8 @@ applyAnswerState(buildAnswerStateFromUrl());
 render();
 
 /* CHANGE LOG
- * - technical fixes: removed the duplicate M04 row, added an explicit analysis_goal routing stage,
- *   and replaced invalid Python adjust-method handling with library-specific mappings
+ * - technical fixes: removed the duplicate M04 row, replaced invalid Python adjust-method handling
+ *   with library-specific mappings, and moved special-case route disambiguation out of the visible tree
  * - statistical routes clarified: split A10 and A12 by analysis target, set A15 to LMM as default,
  *   distinguished GEE versus GLMM estimands in D08 and D09, and tightened ART / permutation wording
  * - code placeholders resolved: replaced pseudo-code with runnable examples where a maintained route exists,
