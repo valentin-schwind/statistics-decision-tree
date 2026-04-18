@@ -2926,6 +2926,8 @@ function drawTree() {
         if (idx >= 0) {
             const bg = document.createElementNS(ns, "rect");
             bg.setAttribute("class", "stage-highlight");
+            bg.setAttribute("rx", "16");
+            bg.setAttribute("ry", "16");
             const isResultStage = currentKey === "result";
             bg.setAttribute(
                 "x",
@@ -3022,6 +3024,8 @@ function drawTree() {
         rect.setAttribute("y", node.y - h / 2);
         rect.setAttribute("width", w);
         rect.setAttribute("height", h);
+        rect.setAttribute("rx", "12");
+        rect.setAttribute("ry", "12");
         rect.setAttribute("class", "node-rect");
 
         let baseFill = "var(--inactive)";
@@ -3185,207 +3189,207 @@ const parametricGuidance = {
     independent_two_groups: {
         title: "Check whether the continuous outcome is approximately parametric for a two-group independent design",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nTo decide between the parametric and nonparametric route here, inspect the outcome separately in both groups and also check variance homogeneity. Use the Q-Q plot as the primary diagnostic. Add the Shapiro-Wilk test as a formal normality check. For group variance equality, use Levene's test (median-centered / Brown-Forsythe style).",
-        primary_label: "Primary check",
-        primary_name: "Q-Q plot by group",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nTo decide between the parametric and nonparametric route here, start with formal checks within both groups and for variance homogeneity. Shapiro-Wilk supports approximate within-group normality, and Levene's test checks whether the group variances are reasonably similar. Then inspect Q-Q plots and group-level histograms as secondary visual diagnostics for skewness, tails, and outliers.",
+        primary_label: "Primary checks",
+        primary_name: "Shapiro-Wilk by group + Levene",
         primary_why:
-            "Visual inspection is the first check. If points stay close to the line in both groups and there are no extreme outliers, the parametric route is usually acceptable.",
+            "These formal checks support approximate normality within each group and variance homogeneity across groups. Prefer Levene over Bartlett here because it is more robust to non-normality.",
         primary_r:
-            'par(mfrow = c(1, 2))\nwith(subset(df, group == levels(factor(group))[1]), {\n  qqnorm(y, main = "Group 1")\n  qqline(y)\n})\nwith(subset(df, group == levels(factor(group))[2]), {\n  qqnorm(y, main = "Group 2")\n  qqline(y)\n})',
-        primary_py:
-            'import matplotlib.pyplot as plt\nimport statsmodels.api as sm\n\ngroups = list(df["group"].dropna().unique())\nfig, axes = plt.subplots(1, len(groups), figsize=(5 * len(groups), 4))\nif len(groups) == 1:\n    axes = [axes]\nfor ax, g in zip(axes, groups):\n    sm.qqplot(df.loc[df["group"] == g, "y"].dropna(), line="45", ax=ax)\n    ax.set_title(f"Q-Q plot: {g}")\nplt.tight_layout()',
-        secondary_label: "Formal tests",
-        secondary_name: "Shapiro-Wilk + Levene",
-        secondary_why:
-            "Shapiro-Wilk checks approximate normality within each group. Levene checks equal variances. Prefer Levene over Bartlett here because it is more robust to non-normality.",
-        secondary_r:
             'by(df$y, df$group, shapiro.test)\ncar::leveneTest(y ~ group, data = df, center = median)',
-        secondary_py:
+        primary_py:
             'from scipy import stats\nfor g, d in df.groupby("group"):\n    print(g, stats.shapiro(d["y"].dropna()))\n\ngroup_arrays = [d["y"].dropna().to_numpy() for _, d in df.groupby("group")]\nprint(stats.levene(*group_arrays, center="median"))',
+        secondary_label: "Secondary checks",
+        secondary_name: "Q-Q plots + histograms by group",
+        secondary_why:
+            "These visual checks show whether each group is approximately symmetric, whether tails deviate from Gaussian expectations, and whether single observations dominate the shape.",
+        secondary_r:
+            'group_levels <- levels(factor(df$group))\npar(mfrow = c(2, length(group_levels)))\nfor (g in group_levels) {\n  values <- subset(df, group == g)$y\n  qqnorm(values, main = paste("Q-Q:", g))\n  qqline(values)\n  hist(values, main = paste("Histogram:", g), xlab = "y")\n}',
+        secondary_py:
+            'import matplotlib.pyplot as plt\nimport statsmodels.api as sm\n\ngroups = list(df["group"].dropna().unique())\nfig, axes = plt.subplots(2, len(groups), figsize=(5 * len(groups), 8), squeeze=False)\nfor idx, g in enumerate(groups):\n    values = df.loc[df["group"] == g, "y"].dropna()\n    sm.qqplot(values, line="45", ax=axes[0, idx])\n    axes[0, idx].set_title(f"Q-Q plot: {g}")\n    axes[1, idx].hist(values, bins="auto", color="#90caf9", edgecolor="white")\n    axes[1, idx].set_title(f"Histogram: {g}")\n    axes[1, idx].set_xlabel("y")\nplt.tight_layout()',
         decision:
             "Choose yes when the group distributions look approximately normal, outliers are not severe, and variances are not grossly heterogeneous. Choose no when the distributions are clearly skewed/heavy-tailed or dominated by outliers.",
     },
     paired_two_groups: {
         title: "Check whether the paired-difference scores are approximately parametric",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor a paired two-condition design, the key normality target is the vector of paired differences, not the raw scores in each condition. Inspect the difference scores first with a Q-Q plot. Add Shapiro-Wilk on the paired differences as a formal check.",
-        primary_label: "Primary check",
-        primary_name: "Q-Q plot of paired differences",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor a paired two-condition design, the key normality target is the vector of paired differences, not the raw scores in each condition. Start with a formal normality test on the difference scores, then inspect the same difference scores visually with a Q-Q plot and histogram.",
+        primary_label: "Primary checks",
+        primary_name: "Shapiro-Wilk on paired differences",
         primary_why:
-            "The paired t-test assumes that the difference scores are approximately normal. This is the quantity that matters here.",
+            "Use the test on the paired differences. Separate normality tests on each raw condition are not the relevant assumption for the paired t-test.",
         primary_r:
-            'd <- df$y1 - df$y2\nqqnorm(d)\nqqline(d)',
-        primary_py:
-            'import statsmodels.api as sm\nimport matplotlib.pyplot as plt\n\nd = (df["y1"] - df["y2"]).dropna()\nsm.qqplot(d, line="45")\nplt.title("Q-Q plot of paired differences")\nplt.show()',
-        secondary_label: "Formal test",
-        secondary_name: "Shapiro-Wilk on paired differences",
-        secondary_why:
-            "Use the test on the difference scores. A separate normality test on each condition is not the relevant assumption for the paired t-test.",
-        secondary_r:
             'd <- df$y1 - df$y2\nshapiro.test(d)',
-        secondary_py:
+        primary_py:
             'from scipy import stats\n\nd = (df["y1"] - df["y2"]).dropna()\nprint(stats.shapiro(d))',
+        secondary_label: "Secondary checks",
+        secondary_name: "Q-Q plot + histogram of paired differences",
+        secondary_why:
+            "These plots make it easier to judge asymmetry, heavy tails, and outliers in the paired-difference distribution that drives the t-test assumption.",
+        secondary_r:
+            'd <- df$y1 - df$y2\npar(mfrow = c(1, 2))\nqqnorm(d, main = "Q-Q plot of paired differences")\nqqline(d)\nhist(d, main = "Histogram of paired differences", xlab = "difference")',
+        secondary_py:
+            'import matplotlib.pyplot as plt\nimport statsmodels.api as sm\n\nd = (df["y1"] - df["y2"]).dropna()\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\nsm.qqplot(d, line="45", ax=axes[0])\naxes[0].set_title("Q-Q plot of paired differences")\naxes[1].hist(d, bins="auto", color="#90caf9", edgecolor="white")\naxes[1].set_title("Histogram of paired differences")\naxes[1].set_xlabel("difference")\nplt.tight_layout()',
         decision:
             "Choose yes when the paired differences look approximately normal and are not dominated by extreme outliers. Choose no when the difference distribution is clearly non-normal or strongly asymmetric.",
     },
     anova_between: {
         title: "Check whether the one-way between-subject design supports the parametric route",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor one-way ANOVA, inspect model residuals with a Q-Q plot and check variance homogeneity across groups. Use Shapiro-Wilk on the residuals as an optional formal check, and Levene as the default variance test.",
-        primary_label: "Primary check",
-        primary_name: "Residual Q-Q plot",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor one-way ANOVA, start with formal checks at the model level. Shapiro-Wilk on residuals supports approximate Gaussian residuals, and Levene checks variance homogeneity across groups. Then inspect the residual Q-Q plot and group-level histograms as secondary visual diagnostics.",
+        primary_label: "Primary checks",
+        primary_name: "Shapiro-Wilk on residuals + Levene",
         primary_why:
-            "For ANOVA, the normality target is best assessed at the model-residual level. The visual Q-Q plot should be checked before relying on p-values from normality tests.",
+            "Shapiro-Wilk gives a formal residual normality check, and Levene checks whether the group variances are sufficiently similar for the classical ANOVA route.",
         primary_r:
-            'fit <- aov(y ~ group, data = df)\nqqnorm(residuals(fit))\nqqline(residuals(fit))',
-        primary_py:
-            'import statsmodels.formula.api as smf\nimport statsmodels.api as sm\nimport matplotlib.pyplot as plt\n\nfit = smf.ols("y ~ C(group)", data=df).fit()\nsm.qqplot(fit.resid, line="45")\nplt.title("Residual Q-Q plot")\nplt.show()',
-        secondary_label: "Formal tests",
-        secondary_name: "Shapiro-Wilk on residuals + Levene",
-        secondary_why:
-            "Shapiro-Wilk gives a formal residual normality check. Levene checks homogeneity of variances across groups.",
-        secondary_r:
             'fit <- aov(y ~ group, data = df)\nshapiro.test(residuals(fit))\ncar::leveneTest(y ~ group, data = df, center = median)',
-        secondary_py:
+        primary_py:
             'from scipy import stats\nimport statsmodels.formula.api as smf\n\nfit = smf.ols("y ~ C(group)", data=df).fit()\nprint(stats.shapiro(fit.resid))\nprint(stats.levene(*[d["y"].dropna().to_numpy() for _, d in df.groupby("group")], center="median"))',
+        secondary_label: "Secondary checks",
+        secondary_name: "Residual Q-Q plot + histograms by group",
+        secondary_why:
+            "The residual Q-Q plot reveals departures from Gaussian residual behavior, and the group-level histograms make it easier to spot skewness or outliers in individual conditions.",
+        secondary_r:
+            'fit <- aov(y ~ group, data = df)\nqqnorm(residuals(fit), main = "Residual Q-Q plot")\nqqline(residuals(fit))\ngroup_levels <- levels(factor(df$group))\npar(mfrow = c(1, length(group_levels)))\nfor (g in group_levels) {\n  hist(subset(df, group == g)$y, main = paste("Histogram:", g), xlab = "y")\n}',
+        secondary_py:
+            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ C(group)", data=df).fit()\nsm.qqplot(fit.resid, line="45")\nplt.title("Residual Q-Q plot")\nplt.show()\n\ngroups = list(df["group"].dropna().unique())\nfig, axes = plt.subplots(1, len(groups), figsize=(5 * len(groups), 4), squeeze=False)\nfor idx, g in enumerate(groups):\n    values = df.loc[df["group"] == g, "y"].dropna()\n    axes[0, idx].hist(values, bins="auto", color="#90caf9", edgecolor="white")\n    axes[0, idx].set_title(f"Histogram: {g}")\n    axes[0, idx].set_xlabel("y")\nplt.tight_layout()',
         decision:
             "Choose yes when residuals are approximately normal and variances are not badly unequal. If normality is acceptable but variances differ, a Welch ANOVA may be preferable to classical ANOVA.",
     },
     rm_anova: {
         title: "Check whether the repeated-measures design supports the parametric route",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor repeated-measures ANOVA, inspect residuals (or condition-specific difference structures) rather than testing each raw condition separately. In addition to approximate normality, check sphericity when a within-subject factor has more than two levels.",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor repeated-measures ANOVA, start with formal checks that match the fitted Gaussian route. Use Shapiro-Wilk on residuals and check sphericity when a within-subject factor has more than two levels. Then inspect condition-level Q-Q plots and histograms as secondary visual diagnostics.",
         primary_label: "Primary checks",
-        primary_name: "Residual Q-Q plot + Mauchly's test of sphericity",
+        primary_name: "Shapiro-Wilk on residuals + Mauchly's test of sphericity",
         primary_why:
-            "Residual diagnostics address approximate normality. Sphericity is an additional assumption that matters for repeated-measures ANOVA with more than two repeated levels.",
+            "Shapiro-Wilk supports approximate Gaussian residuals, and sphericity is an additional formal assumption for repeated-measures ANOVA with more than two repeated levels.",
         primary_r:
-            'library(afex)\nfit <- aov_ez(id = "subject", dv = "y", within = "condition", data = df)\nqqnorm(residuals(fit$lm))\nqqline(residuals(fit$lm))\n# inspect sphericity output in fit',
+            'library(afex)\nfit <- aov_ez(id = "subject", dv = "y", within = "condition", data = df)\nshapiro.test(residuals(fit$lm))\n# inspect sphericity output in fit',
         primary_py:
-            'import pingouin as pg\n\nfit = pg.rm_anova(data=df, dv="y", within="condition", subject="subject", detailed=True)\nprint(fit)\nprint(pg.sphericity(data=df, dv="y", within="condition", subject="subject"))',
-        secondary_label: "Optional formal normality check",
-        secondary_name: "Shapiro-Wilk on model residuals or paired differences",
+            'from scipy import stats\nimport pingouin as pg\nimport statsmodels.formula.api as smf\n\nfit = smf.ols("y ~ C(condition) + C(subject)", data=df).fit()\nprint(stats.shapiro(fit.resid))\nprint(pg.sphericity(data=df, dv="y", within="condition", subject="subject"))',
+        secondary_label: "Secondary checks",
+        secondary_name: "Q-Q plots + histograms by condition",
         secondary_why:
-            "Use a formal normality test only as support for the visual check. For two repeated levels, the paired-difference distribution is the most relevant target.",
+            "Condition-level visual checks help you spot skewness, heavy tails, and outliers that are easy to miss when reading only the formal test output.",
         secondary_r:
-            'library(afex)\nfit <- aov_ez(id = "subject", dv = "y", within = "condition", data = df)\nshapiro.test(residuals(fit$lm))',
+            'condition_levels <- levels(factor(df$condition))\npar(mfrow = c(2, length(condition_levels)))\nfor (lvl in condition_levels) {\n  values <- subset(df, condition == lvl)$y\n  qqnorm(values, main = paste("Q-Q:", lvl))\n  qqline(values)\n  hist(values, main = paste("Histogram:", lvl), xlab = "y")\n}',
         secondary_py:
-            'from scipy import stats\n# after fitting a suitable Gaussian model, apply Shapiro-Wilk to residuals\n# print(stats.shapiro(residuals))',
+            'import matplotlib.pyplot as plt\nimport statsmodels.api as sm\n\nconditions = list(df["condition"].dropna().unique())\nfig, axes = plt.subplots(2, len(conditions), figsize=(5 * len(conditions), 8), squeeze=False)\nfor idx, condition in enumerate(conditions):\n    values = df.loc[df["condition"] == condition, "y"].dropna()\n    sm.qqplot(values, line="45", ax=axes[0, idx])\n    axes[0, idx].set_title(f"Q-Q plot: {condition}")\n    axes[1, idx].hist(values, bins="auto", color="#90caf9", edgecolor="white")\n    axes[1, idx].set_title(f"Histogram: {condition}")\n    axes[1, idx].set_xlabel("y")\nplt.tight_layout()',
         decision:
             "Choose yes when the residual structure looks acceptable and, when relevant, sphericity is either met or can be handled with a correction such as Greenhouse-Geisser. Choose no when the repeated-measures distributional assumptions are clearly not acceptable.",
     },
     regression_linear: {
         title: "Check whether the Gaussian linear-regression route is appropriate",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor linear regression, do not test the raw outcome alone. Inspect model residuals. The Q-Q plot is the primary normality check. Also inspect residuals versus fitted values for variance patterns, and optionally add Breusch-Pagan for heteroskedasticity. A formal normality test such as Shapiro-Wilk or Jarque-Bera on residuals is optional and secondary.",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor linear regression, do not test the raw outcome alone. Start with formal tests on the fitted-model residuals. Shapiro-Wilk or Jarque-Bera supports approximate residual normality, and Breusch-Pagan checks heteroskedasticity. Then inspect visual residual diagnostics as secondary checks.",
         primary_label: "Primary checks",
-        primary_name: "Residual Q-Q plot + residuals vs fitted",
+        primary_name: "Shapiro-Wilk or Jarque-Bera on residuals + Breusch-Pagan",
         primary_why:
-            "These plots directly address the model assumptions that matter for linear regression: approximate residual normality and roughly constant variance.",
+            "These formal checks support approximate Gaussian residuals and constant variance. Breusch-Pagan targets heteroskedasticity rather than normality.",
         primary_r:
-            'fit <- lm(y ~ x, data = df)\npar(mfrow = c(1, 2))\nqqnorm(residuals(fit))\nqqline(residuals(fit))\nplot(fitted(fit), residuals(fit), xlab = "Fitted", ylab = "Residuals")\nabline(h = 0, lty = 2)',
-        primary_py:
-            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ x", data=df).fit()\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\nsm.qqplot(fit.resid, line="45", ax=axes[0])\naxes[0].set_title("Residual Q-Q plot")\naxes[1].scatter(fit.fittedvalues, fit.resid)\naxes[1].axhline(0, linestyle="--")\naxes[1].set_xlabel("Fitted")\naxes[1].set_ylabel("Residuals")\naxes[1].set_title("Residuals vs fitted")\nplt.tight_layout()',
-        secondary_label: "Optional formal tests",
-        secondary_name: "Shapiro-Wilk or Jarque-Bera on residuals + Breusch-Pagan",
-        secondary_why:
-            "These tests can support the visual impression but should not replace it. Breusch-Pagan targets heteroskedasticity rather than normality.",
-        secondary_r:
             'fit <- lm(y ~ x, data = df)\nshapiro.test(residuals(fit))\ntseries::jarque.bera.test(residuals(fit))\nlmtest::bptest(fit)',
-        secondary_py:
+        primary_py:
             'from scipy import stats\nfrom statsmodels.stats.diagnostic import het_breuschpagan\nfrom statsmodels.stats.stattools import jarque_bera\nimport statsmodels.formula.api as smf\n\nfit = smf.ols("y ~ x", data=df).fit()\nprint(stats.shapiro(fit.resid))\nprint(jarque_bera(fit.resid))\nprint(het_breuschpagan(fit.resid, fit.model.exog))',
+        secondary_label: "Secondary checks",
+        secondary_name: "Residual Q-Q plot + residuals vs fitted + residual histogram",
+        secondary_why:
+            "These visual diagnostics make it easier to judge tail behavior, variance patterns, and outlier influence in the residual structure.",
+        secondary_r:
+            'fit <- lm(y ~ x, data = df)\npar(mfrow = c(1, 3))\nqqnorm(residuals(fit), main = "Residual Q-Q plot")\nqqline(residuals(fit))\nplot(fitted(fit), residuals(fit), xlab = "Fitted", ylab = "Residuals")\nabline(h = 0, lty = 2)\nhist(residuals(fit), main = "Residual histogram", xlab = "residual")',
+        secondary_py:
+            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ x", data=df).fit()\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\nsm.qqplot(fit.resid, line="45", ax=axes[0])\naxes[0].set_title("Residual Q-Q plot")\naxes[1].scatter(fit.fittedvalues, fit.resid)\naxes[1].axhline(0, linestyle="--")\naxes[1].set_xlabel("Fitted")\naxes[1].set_ylabel("Residuals")\naxes[1].set_title("Residuals vs fitted")\naxes[2].hist(fit.resid, bins="auto", color="#90caf9", edgecolor="white")\naxes[2].set_title("Residual histogram")\naxes[2].set_xlabel("residual")\nplt.tight_layout()',
         decision:
             "Choose yes when residuals are roughly linear in the Q-Q plot, variance looks approximately constant, and no severe leverage/outlier problem dominates the fit. Choose no when residuals show clear non-normality, strong heteroskedasticity, or the relationship is not adequately linear.",
     },
     regression_multiple: {
         title: "Check whether the Gaussian multiple-regression route is appropriate",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor multiple regression, inspect residual diagnostics from the fitted model rather than the raw variables individually. The residual Q-Q plot and residuals-versus-fitted plot are the primary checks. Add heteroskedasticity and collinearity diagnostics when needed.",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor multiple regression, start with formal checks on the fitted-model residuals rather than the raw variables individually. Use Shapiro-Wilk or Jarque-Bera for residual normality, Breusch-Pagan for heteroskedasticity, and VIF for collinearity. Then inspect visual residual diagnostics as secondary checks.",
         primary_label: "Primary checks",
-        primary_name: "Residual Q-Q plot + residuals vs fitted",
+        primary_name: "Shapiro-Wilk or Jarque-Bera on residuals + Breusch-Pagan + VIF",
         primary_why:
-            "These show whether the Gaussian linear-model assumptions are approximately reasonable at the model level.",
+            "These formal checks support approximate Gaussian residuals, constant variance, and tolerable collinearity at the model level.",
         primary_r:
-            'fit <- lm(y ~ x1 + x2 + x3, data = df)\npar(mfrow = c(1, 2))\nqqnorm(residuals(fit))\nqqline(residuals(fit))\nplot(fitted(fit), residuals(fit), xlab = "Fitted", ylab = "Residuals")\nabline(h = 0, lty = 2)',
-        primary_py:
-            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ x1 + x2 + x3", data=df).fit()\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\nsm.qqplot(fit.resid, line="45", ax=axes[0])\naxes[0].set_title("Residual Q-Q plot")\naxes[1].scatter(fit.fittedvalues, fit.resid)\naxes[1].axhline(0, linestyle="--")\naxes[1].set_xlabel("Fitted")\naxes[1].set_ylabel("Residuals")\naxes[1].set_title("Residuals vs fitted")\nplt.tight_layout()',
-        secondary_label: "Optional formal tests",
-        secondary_name: "Shapiro-Wilk or Jarque-Bera on residuals + Breusch-Pagan + VIF",
-        secondary_why:
-            "Use formal tests as support, not as the sole basis. In multiple regression, collinearity is also an important practical diagnostic.",
-        secondary_r:
             'fit <- lm(y ~ x1 + x2 + x3, data = df)\nshapiro.test(residuals(fit))\ntseries::jarque.bera.test(residuals(fit))\nlmtest::bptest(fit)\ncar::vif(fit)',
-        secondary_py:
+        primary_py:
             'from scipy import stats\nfrom statsmodels.stats.diagnostic import het_breuschpagan\nfrom statsmodels.stats.stattools import jarque_bera\nfrom statsmodels.stats.outliers_influence import variance_inflation_factor\nimport statsmodels.formula.api as smf\n\nfit = smf.ols("y ~ x1 + x2 + x3", data=df).fit()\nprint(stats.shapiro(fit.resid))\nprint(jarque_bera(fit.resid))\nprint(het_breuschpagan(fit.resid, fit.model.exog))\nprint([variance_inflation_factor(fit.model.exog, i) for i in range(fit.model.exog.shape[1])])',
+        secondary_label: "Secondary checks",
+        secondary_name: "Residual Q-Q plot + residuals vs fitted + residual histogram",
+        secondary_why:
+            "These visual diagnostics help interpret tail behavior, variance patterns, and whether a few points dominate the fitted model.",
+        secondary_r:
+            'fit <- lm(y ~ x1 + x2 + x3, data = df)\npar(mfrow = c(1, 3))\nqqnorm(residuals(fit), main = "Residual Q-Q plot")\nqqline(residuals(fit))\nplot(fitted(fit), residuals(fit), xlab = "Fitted", ylab = "Residuals")\nabline(h = 0, lty = 2)\nhist(residuals(fit), main = "Residual histogram", xlab = "residual")',
+        secondary_py:
+            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ x1 + x2 + x3", data=df).fit()\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\nsm.qqplot(fit.resid, line="45", ax=axes[0])\naxes[0].set_title("Residual Q-Q plot")\naxes[1].scatter(fit.fittedvalues, fit.resid)\naxes[1].axhline(0, linestyle="--")\naxes[1].set_xlabel("Fitted")\naxes[1].set_ylabel("Residuals")\naxes[1].set_title("Residuals vs fitted")\naxes[2].hist(fit.resid, bins="auto", color="#90caf9", edgecolor="white")\naxes[2].set_title("Residual histogram")\naxes[2].set_xlabel("residual")\nplt.tight_layout()',
         decision:
             "Choose yes when the model residuals are approximately normal, variance looks roughly constant, and the model is not dominated by severe collinearity or influential points. Choose no when these assumptions clearly fail and a robust or permutation-based model is more appropriate.",
     },
     factorial_between: {
         title: "Check whether the factorial between-subject design supports the parametric route",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor factorial ANOVA, assess the fitted model rather than each cell separately in isolation. The primary checks are a residual Q-Q plot and a variance-homogeneity check across the cell structure.",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor factorial ANOVA, assess the fitted model rather than each cell separately in isolation. Start with formal checks on the model residuals and the cell-wise variance structure, then use visual diagnostics as secondary checks.",
         primary_label: "Primary checks",
-        primary_name: "Residual Q-Q plot + Levene test across cells",
+        primary_name: "Shapiro-Wilk on residuals + Levene across cells",
         primary_why:
-            "Residual diagnostics target approximate normality, and Levene checks whether cell variances are roughly compatible with the classical ANOVA route.",
+            "Shapiro-Wilk targets approximate Gaussian residuals, and Levene checks whether cell variances are roughly compatible with the classical factorial ANOVA route.",
         primary_r:
-            'fit <- lm(y ~ A * B, data = df)\nqqnorm(residuals(fit))\nqqline(residuals(fit))\ncar::leveneTest(y ~ interaction(A, B), data = df, center = median)',
+            'fit <- lm(y ~ A * B, data = df)\nshapiro.test(residuals(fit))\ncar::leveneTest(y ~ interaction(A, B), data = df, center = median)',
         primary_py:
-            'import statsmodels.formula.api as smf\nimport statsmodels.api as sm\nimport matplotlib.pyplot as plt\nfrom scipy import stats\n\nfit = smf.ols("y ~ C(A) * C(B)", data=df).fit()\nsm.qqplot(fit.resid, line="45")\nplt.title("Residual Q-Q plot")\nplt.show()\nprint(stats.levene(*[d["y"].dropna().to_numpy() for _, d in df.groupby(["A", "B"])], center="median"))',
-        secondary_label: "Optional formal check",
-        secondary_name: "Shapiro-Wilk on residuals",
+            'from scipy import stats\nimport statsmodels.formula.api as smf\n\nfit = smf.ols("y ~ C(A) * C(B)", data=df).fit()\nprint(stats.shapiro(fit.resid))\nprint(stats.levene(*[d["y"].dropna().to_numpy() for _, d in df.groupby(["A", "B"])], center="median"))',
+        secondary_label: "Secondary checks",
+        secondary_name: "Residual Q-Q plot + histograms by cell",
         secondary_why:
-            "Use the normality test on the residuals from the factorial model, not on each raw variable separately.",
+            "The residual Q-Q plot reveals departures from Gaussian residual behavior, and cell-level histograms make it easier to spot skewness or outliers in specific combinations of factors.",
         secondary_r:
-            'fit <- lm(y ~ A * B, data = df)\nshapiro.test(residuals(fit))',
+            'fit <- lm(y ~ A * B, data = df)\nqqnorm(residuals(fit), main = "Residual Q-Q plot")\nqqline(residuals(fit))\ncell_levels <- levels(interaction(df$A, df$B, drop = TRUE))\npar(mfrow = c(1, length(cell_levels)))\nfor (cell in cell_levels) {\n  hist(df$y[interaction(df$A, df$B, drop = TRUE) == cell], main = paste("Histogram:", cell), xlab = "y")\n}',
         secondary_py:
-            'from scipy import stats\nimport statsmodels.formula.api as smf\n\nfit = smf.ols("y ~ C(A) * C(B)", data=df).fit()\nprint(stats.shapiro(fit.resid))',
+            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.ols("y ~ C(A) * C(B)", data=df).fit()\nsm.qqplot(fit.resid, line="45")\nplt.title("Residual Q-Q plot")\nplt.show()\n\ncells = list(df.groupby(["A", "B"]).groups.keys())\nfig, axes = plt.subplots(1, len(cells), figsize=(5 * len(cells), 4), squeeze=False)\nfor idx, cell in enumerate(cells):\n    values = df.loc[(df["A"] == cell[0]) & (df["B"] == cell[1]), "y"].dropna()\n    axes[0, idx].hist(values, bins="auto", color="#90caf9", edgecolor="white")\n    axes[0, idx].set_title(f"Histogram: {cell[0]} / {cell[1]}")\n    axes[0, idx].set_xlabel("y")\nplt.tight_layout()',
         decision:
             "Choose yes when the factorial-model residuals look approximately normal and the cell variances are not badly mismatched. Choose no when non-normality or outlier sensitivity clearly dominates.",
     },
     factorial_within_or_mixed: {
         title: "Check whether the repeated or mixed Gaussian model route is appropriate",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor repeated, mixed, or Gaussian mixed-model routes, inspect residual diagnostics from the fitted Gaussian model rather than testing each raw condition separately. Use a residual Q-Q plot and residuals-versus-fitted plot as the primary checks. When a repeated-measures ANOVA is still the chosen analysis, also inspect sphericity where relevant.",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor repeated, mixed, or Gaussian mixed-model routes, start with formal checks on the fitted Gaussian model rather than testing each raw condition separately. Use Shapiro-Wilk on residuals as the normality check, and if the intended analysis remains a repeated-measures ANOVA, also inspect sphericity where relevant. Then review visual residual diagnostics and within-condition histograms as secondary checks.",
         primary_label: "Primary checks",
-        primary_name: "Residual Q-Q plot + residuals vs fitted",
+        primary_name: "Shapiro-Wilk on residuals + sphericity if using repeated-measures ANOVA",
         primary_why:
-            "These are the main diagnostics for deciding whether a Gaussian repeated / mixed model is acceptable.",
+            "These formal checks support approximate Gaussian residuals and, when repeated-measures ANOVA is used, the additional sphericity assumption.",
         primary_r:
-            'library(lme4)\nfit <- lmer(y ~ between_factor * within_factor + (1|subject), data = df)\npar(mfrow = c(1, 2))\nqqnorm(residuals(fit))\nqqline(residuals(fit))\nplot(fitted(fit), residuals(fit), xlab = "Fitted", ylab = "Residuals")\nabline(h = 0, lty = 2)\nqqmath(ranef(fit, condVar = TRUE))',
-        primary_py:
-            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.mixedlm("y ~ between_factor * within_factor", data=df, groups=df["subject"]).fit()\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\nsm.qqplot(fit.resid, line="45", ax=axes[0])\naxes[0].set_title("Residual Q-Q plot")\naxes[1].scatter(fit.fittedvalues, fit.resid)\naxes[1].axhline(0, linestyle="--")\naxes[1].set_xlabel("Fitted")\naxes[1].set_ylabel("Residuals")\naxes[1].set_title("Residuals vs fitted")\nplt.tight_layout()',
-        secondary_label: "Optional formal checks",
-        secondary_name: "Shapiro-Wilk on residuals + sphericity if using repeated-measures ANOVA",
-        secondary_why:
-            "Use formal tests only as support for the visual diagnostics. If the intended model is a repeated-measures ANOVA, sphericity still matters for within-subject factors with more than two levels.",
-        secondary_r:
             'library(lme4)\nfit <- lmer(y ~ between_factor * within_factor + (1|subject), data = df)\nshapiro.test(residuals(fit))\n# for repeated-measures ANOVA, also inspect Mauchly / GG correction output',
-        secondary_py:
+        primary_py:
             'from scipy import stats\n# after fitting a Gaussian mixed model:\n# print(stats.shapiro(fit.resid))\n# if a repeated-measures ANOVA is used instead, also compute sphericity with pingouin.sphericity(...)',
+        secondary_label: "Secondary checks",
+        secondary_name: "Residual Q-Q plot + residuals vs fitted + histograms by within condition",
+        secondary_why:
+            "These visual diagnostics help you judge tail behavior, variance patterns, and whether particular repeated conditions have strongly skewed or outlier-driven distributions.",
+        secondary_r:
+            'library(lme4)\nfit <- lmer(y ~ between_factor * within_factor + (1|subject), data = df)\npar(mfrow = c(1, 3))\nqqnorm(residuals(fit), main = "Residual Q-Q plot")\nqqline(residuals(fit))\nplot(fitted(fit), residuals(fit), xlab = "Fitted", ylab = "Residuals")\nabline(h = 0, lty = 2)\nhist(residuals(fit), main = "Residual histogram", xlab = "residual")\nwithin_levels <- levels(factor(df$within_factor))\npar(mfrow = c(1, length(within_levels)))\nfor (lvl in within_levels) {\n  hist(subset(df, within_factor == lvl)$y, main = paste("Histogram:", lvl), xlab = "y")\n}',
+        secondary_py:
+            'import matplotlib.pyplot as plt\nimport statsmodels.formula.api as smf\nimport statsmodels.api as sm\n\nfit = smf.mixedlm("y ~ between_factor * within_factor", data=df, groups=df["subject"]).fit()\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\nsm.qqplot(fit.resid, line="45", ax=axes[0])\naxes[0].set_title("Residual Q-Q plot")\naxes[1].scatter(fit.fittedvalues, fit.resid)\naxes[1].axhline(0, linestyle="--")\naxes[1].set_xlabel("Fitted")\naxes[1].set_ylabel("Residuals")\naxes[1].set_title("Residuals vs fitted")\naxes[2].hist(fit.resid, bins="auto", color="#90caf9", edgecolor="white")\naxes[2].set_title("Residual histogram")\naxes[2].set_xlabel("residual")\nplt.tight_layout()\n\nconditions = list(df["within_factor"].dropna().unique())\nfig, axes = plt.subplots(1, len(conditions), figsize=(5 * len(conditions), 4), squeeze=False)\nfor idx, condition in enumerate(conditions):\n    values = df.loc[df["within_factor"] == condition, "y"].dropna()\n    axes[0, idx].hist(values, bins="auto", color="#90caf9", edgecolor="white")\n    axes[0, idx].set_title(f"Histogram: {condition}")\n    axes[0, idx].set_xlabel("y")\nplt.tight_layout()',
         decision:
             "Choose yes when the Gaussian residual diagnostics look acceptable and, where ANOVA-style repeated factors are used, sphericity is either acceptable or can be corrected. Choose no when the repeated / clustered data clearly violate the Gaussian route.",
     },
     manova: {
         title: "Check whether the multivariate Gaussian route is appropriate",
         lead:
-            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor MANOVA or MANCOVA-style routes, the key issue is multivariate—not only univariate—distributional adequacy. Inspect univariate Q-Q plots for each outcome, then add a multivariate normality check and a covariance-homogeneity check across groups.",
+            "More than one compatible route remains. Answer the next question to resolve the model choice.\n\nFor MANOVA or MANCOVA-style routes, the key issue is multivariate, not only univariate, distributional adequacy. Start with formal checks for multivariate normality and covariance homogeneity across groups, then review univariate Q-Q plots and histograms for each outcome as secondary visual diagnostics.",
         primary_label: "Primary checks",
-        primary_name: "Q-Q plots for each outcome + multivariate normality",
+        primary_name: "Multivariate normality + Box's M",
         primary_why:
-            "MANOVA assumes multivariate normality of the outcome vector within groups. Univariate checks help, but they are not sufficient on their own.",
+            "MANOVA assumes multivariate normality of the outcome vector within groups and reasonably similar covariance matrices across groups.",
         primary_r:
-            'par(mfrow = c(1, 2))\nqqnorm(df$y1); qqline(df$y1)\nqqnorm(df$y2); qqline(df$y2)\nMVN::mvn(df[, c("y1", "y2")], mvnTest = "mardia")',
+            'MVN::mvn(df[, c("y1", "y2")], mvnTest = "mardia")\nbiotools::boxM(df[, c("y1", "y2")], df$group)',
         primary_py:
-            'import matplotlib.pyplot as plt\nimport statsmodels.api as sm\nfrom pingouin import multivariate_normality\n\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\nsm.qqplot(df["y1"].dropna(), line="45", ax=axes[0])\naxes[0].set_title("Q-Q plot: y1")\nsm.qqplot(df["y2"].dropna(), line="45", ax=axes[1])\naxes[1].set_title("Q-Q plot: y2")\nplt.tight_layout()\nprint(multivariate_normality(df[["y1", "y2"]].dropna(), alpha=0.05))',
-        secondary_label: "Covariance check",
-        secondary_name: "Box's M test",
+            'from pingouin import multivariate_normality\n\nprint(multivariate_normality(df[["y1", "y2"]].dropna(), alpha=0.05))\n# add a Box\'s M implementation if available in your workflow; otherwise inspect group covariance matrices explicitly',
+        secondary_label: "Secondary checks",
+        secondary_name: "Q-Q plots + histograms for each outcome",
         secondary_why:
-            "This evaluates whether covariance matrices are approximately equal across groups. Treat it cautiously because it can be sensitive, especially in large samples.",
+            "These plots help you see whether particular outcomes have skewness, heavy tails, or outliers that could drive multivariate problems.",
         secondary_r:
-            'biotools::boxM(df[, c("y1", "y2")], df$group)',
+            'par(mfrow = c(2, 2))\nqqnorm(df$y1, main = "Q-Q plot: y1")\nqqline(df$y1)\nhist(df$y1, main = "Histogram: y1", xlab = "y1")\nqqnorm(df$y2, main = "Q-Q plot: y2")\nqqline(df$y2)\nhist(df$y2, main = "Histogram: y2", xlab = "y2")',
         secondary_py:
-            '# Python implementations vary by package; if unavailable, inspect group covariance matrices directly or use a dedicated multivariate package',
+            'import matplotlib.pyplot as plt\nimport statsmodels.api as sm\n\nfig, axes = plt.subplots(2, 2, figsize=(10, 8))\nsm.qqplot(df["y1"].dropna(), line="45", ax=axes[0, 0])\naxes[0, 0].set_title("Q-Q plot: y1")\naxes[0, 1].hist(df["y1"].dropna(), bins="auto", color="#90caf9", edgecolor="white")\naxes[0, 1].set_title("Histogram: y1")\naxes[0, 1].set_xlabel("y1")\nsm.qqplot(df["y2"].dropna(), line="45", ax=axes[1, 0])\naxes[1, 0].set_title("Q-Q plot: y2")\naxes[1, 1].hist(df["y2"].dropna(), bins="auto", color="#90caf9", edgecolor="white")\naxes[1, 1].set_title("Histogram: y2")\naxes[1, 1].set_xlabel("y2")\nplt.tight_layout()',
         decision:
             "Choose yes when the multivariate outcome structure looks approximately Gaussian and covariance differences across groups are not severe. Choose no when the outcome vector is clearly non-Gaussian or dominated by outliers.",
     }
@@ -3509,18 +3513,18 @@ function renderParametricGuidance() {
     const primaryCard = document.createElement("div");
     primaryCard.className = "unified-card";
     primaryCard.innerHTML =
-        '<h3>Primary check</h3>' +
+        '<h3>' + escapeHtml(guide.primary_label || "Primary checks") + '</h3>' +
         '<p><strong>' + escapeHtml(guide.primary_name) + '</strong><br>' +
         escapeHtml(guide.primary_why) + '</p>';
     grid.appendChild(primaryCard);
 
-    const optionalCard = document.createElement("div");
-    optionalCard.className = "unified-card";
-    optionalCard.innerHTML =
-        '<h3>Optional check</h3>' +
+    const secondaryCard = document.createElement("div");
+    secondaryCard.className = "unified-card";
+    secondaryCard.innerHTML =
+        '<h3>' + escapeHtml(guide.secondary_label || "Secondary checks") + '</h3>' +
         '<p><strong>' + escapeHtml(guide.secondary_name) + '</strong><br>' +
         escapeHtml(guide.secondary_why) + '</p>';
-    grid.appendChild(optionalCard);
+    grid.appendChild(secondaryCard);
     panel.appendChild(grid);
 
     panel.appendChild(
@@ -3534,16 +3538,16 @@ function renderParametricGuidance() {
     codeGrid.appendChild(
         codeCard(
             "R",
-            '# Primary check\n' + (guide.primary_r || '# not available') +
-            '\n\n# Optional check\n' + (guide.secondary_r || '# not available'),
+            '# ' + (guide.primary_label || 'Primary checks') + '\n' + (guide.primary_r || '# not available') +
+            '\n\n# ' + (guide.secondary_label || 'Secondary checks') + '\n' + (guide.secondary_r || '# not available'),
             '',
         ),
     );
     codeGrid.appendChild(
         codeCard(
             "Python",
-            '# Primary check\n' + (guide.primary_py || '# not available') +
-            '\n\n# Optional check\n' + (guide.secondary_py || '# not available'),
+            '# ' + (guide.primary_label || 'Primary checks') + '\n' + (guide.primary_py || '# not available') +
+            '\n\n# ' + (guide.secondary_label || 'Secondary checks') + '\n' + (guide.secondary_py || '# not available'),
             '',
         ),
     );
@@ -3862,7 +3866,7 @@ function formatDecisionRuleHTML(text, allowedChoices = []) {
         )
         .replace(
             /\.\s+(?=<button type="button" class="decision-pill no" data-decision-choice="no"(?: disabled aria-disabled="true")?>Choose no<\/button>)/g,
-            ".<br><br>",
+            ".<br>",
         );
 }
 

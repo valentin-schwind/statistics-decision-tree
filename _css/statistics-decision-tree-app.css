@@ -453,7 +453,7 @@ hr.sep {
     color: var(--text);
     line-height: 1.8;
     font-size: 1rem;
-    max-width: 88ch;
+    width: 100%;
 }
 
 .decision-pill {
