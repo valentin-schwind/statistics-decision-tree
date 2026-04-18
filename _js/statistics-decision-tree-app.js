@@ -2533,8 +2533,8 @@ function pretty(v) {
         continuous: "Continuous",
         discrete: "Discrete",
         both: "Both",
-        between: "between",
-        within: "within",
+        between: "Between",
+        within: "Within",
         yes: "yes",
         no: "no",
         any: "any",
@@ -3031,13 +3031,13 @@ function drawTree() {
                 "x",
                 String(
                     layout.stageCenters.get(currentKey) -
-                    (isResultStage ? 140 : 70),
+                    (isResultStage ? 150 : 70),
                 ),
             );
             bg.setAttribute("y", "0");
             bg.setAttribute(
                 "width",
-                String(isResultStage ? 280 : 140),
+                String(isResultStage ? 300 : 140),
             );
             bg.setAttribute("height", String(height - 4));
             overviewSvg.appendChild(bg);
@@ -3064,10 +3064,10 @@ function drawTree() {
         const p = document.createElementNS(ns, "path");
         p.setAttribute("class", "edge");
         const x1 =
-            edge.from.x + (edge.from.kind === "result" ? 126 : 50);
+            edge.from.x + (edge.from.kind === "result" ? 136 : 50);
         const y1 = edge.from.y;
         const x2 =
-            edge.to.x - (edge.to.kind === "result" ? 106 : 50);
+            edge.to.x - (edge.to.kind === "result" ? 116 : 50);
         const y2 = edge.to.y;
         const mx = (x1 + x2) / 2;
         p.setAttribute(
@@ -3115,7 +3115,7 @@ function drawTree() {
             "node" + (st.clickable ? " clickable" : ""),
         );
         const isResult = node.kind === "result";
-        const w = isResult ? 220 : 100;
+        const w = isResult ? 240 : 100;
         const h = 26;
         const rect = document.createElementNS(ns, "rect");
         rect.setAttribute("x", node.x - w / 2);
@@ -3213,13 +3213,22 @@ function renderAnswers() {
         const def = stageDefs.find((s) => s.key === key);
         const chip = document.createElement("span");
         chip.className = "answer-chip";
-        chip.innerHTML =
+        const label = document.createElement("span");
+        label.className = "answer-chip-label";
+        label.innerHTML =
             "<strong>" +
             escapeHtml(formatStats(def.label)) +
             ":</strong> " +
-            escapeHtml(formatStats(pretty(value))) +
-            ' <button title="Clear from here">×</button>';
-        chip.querySelector("button").addEventListener(
+            escapeHtml(formatStats(pretty(value)));
+        chip.appendChild(label);
+
+        const clearButton = document.createElement("button");
+        clearButton.type = "button";
+        clearButton.title = "Clear from here";
+        clearButton.setAttribute("aria-label", "Clear from here");
+        clearButton.textContent = "×";
+        chip.appendChild(clearButton);
+        clearButton.addEventListener(
             "click",
             () => {
                 clearFrom(key);
@@ -3258,13 +3267,14 @@ function renderQuestion() {
         '<div class="question-text">' +
         escapeHtml(formatStats(def.question)) +
         '</div><div class="options">';
-    for (const opt of opts)
+    for (const opt of opts) {
         html +=
             '<button class="option-btn" data-value="' +
             escapeHtml(opt) +
             '">' +
             escapeHtml(formatStats(pretty(opt))) +
             "</button>";
+    }
     html +=
         '</div><div class="hint">Only options that still match at least one valid path are shown.</div>';
     questionArea.innerHTML = html;
@@ -6926,6 +6936,175 @@ function renderPosthocPanel(row) {
     return panel;
 }
 
+function createValueTypeCell(title, definition, examples, note, tone) {
+    const cell = document.createElement("div");
+    cell.style.minWidth = "185px";
+    cell.style.padding = "10px 12px";
+    cell.style.border = "1px solid var(--bs-border-color, #d5dde7)";
+    cell.style.borderRadius = "14px";
+    cell.style.background = tone === "muted" ? "#f7f9fc" : "#ffffff";
+    cell.style.boxShadow = "0 1px 2px rgba(15, 23, 42, 0.04)";
+
+    const heading = document.createElement("div");
+    heading.style.fontSize = "0.9rem";
+    heading.style.fontWeight = "700";
+    heading.style.color = "var(--bs-heading-color, #16324f)";
+    heading.style.marginBottom = "8px";
+    heading.textContent = title;
+    cell.appendChild(heading);
+
+    const definitionEl = document.createElement("p");
+    definitionEl.className = "small";
+    definitionEl.style.marginBottom = "8px";
+    definitionEl.innerHTML = "<strong>Definition:</strong> " + escapeHtml(definition);
+    cell.appendChild(definitionEl);
+
+    const examplesEl = document.createElement("p");
+    examplesEl.className = "small";
+    examplesEl.style.marginBottom = note ? "8px" : "0";
+    examplesEl.innerHTML = "<strong>Examples:</strong> " + escapeHtml(examples);
+    cell.appendChild(examplesEl);
+
+    if (note) {
+        const noteEl = document.createElement("p");
+        noteEl.className = "small";
+        noteEl.style.marginBottom = "0";
+        noteEl.innerHTML = "<strong>Note:</strong> " + escapeHtml(note);
+        cell.appendChild(noteEl);
+    }
+
+    return cell;
+}
+
+function createValueTypeInfographic() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "unified-panel";
+
+    const intro = document.createElement("div");
+    intro.className = "unified-intro";
+    intro.innerHTML =
+        "<h3>Discrete vs. continuous: quick guide</h3>" +
+        "<p>Use this overview when you need to decide whether a variable should be treated as discrete or continuous.</p>";
+    wrapper.appendChild(intro);
+
+    const scrollRegion = document.createElement("div");
+    scrollRegion.style.overflowX = "auto";
+    scrollRegion.style.paddingBottom = "2px";
+    scrollRegion.style.webkitOverflowScrolling = "touch";
+
+    const matrix = document.createElement("div");
+    matrix.style.display = "grid";
+    matrix.style.gridTemplateColumns = "130px repeat(4, minmax(185px, 1fr))";
+    matrix.style.gap = "10px";
+    matrix.style.minWidth = "910px";
+    matrix.style.alignItems = "stretch";
+
+    const corner = document.createElement("div");
+    corner.style.padding = "12px 14px";
+    corner.style.border = "1px solid var(--bs-border-color, #d5dde7)";
+    corner.style.borderRadius = "14px";
+    corner.style.background = "#eef3f8";
+    corner.style.fontWeight = "700";
+    corner.style.color = "var(--bs-heading-color, #16324f)";
+    corner.textContent = "Value type / Scale level";
+    matrix.appendChild(corner);
+
+    ["Nominal", "Ordinal", "Interval", "Ratio"].forEach((label) => {
+        const header = document.createElement("div");
+        header.style.padding = "12px 14px";
+        header.style.border = "1px solid var(--bs-border-color, #d5dde7)";
+        header.style.borderRadius = "14px";
+        header.style.background = "#eef3f8";
+        header.style.fontWeight = "700";
+        header.style.color = "var(--bs-heading-color, #16324f)";
+        header.textContent = label;
+        matrix.appendChild(header);
+    });
+
+    const discreteHeader = document.createElement("div");
+    discreteHeader.style.padding = "12px 14px";
+    discreteHeader.style.border = "1px solid var(--bs-border-color, #d5dde7)";
+    discreteHeader.style.borderRadius = "14px";
+    discreteHeader.style.background = "#f5f8fb";
+    discreteHeader.style.fontWeight = "700";
+    discreteHeader.style.color = "var(--bs-heading-color, #16324f)";
+    discreteHeader.textContent = "Discrete";
+    matrix.appendChild(discreteHeader);
+
+    matrix.appendChild(createValueTypeCell(
+        "Discrete nominal",
+        "Categories without inherent order.",
+        "Hair color, eye color, degree program, nationality, ZIP code, student ID number, phone number, operating system.",
+        "Nominal data are typically discrete or categorical.",
+        "default",
+    ));
+    matrix.appendChild(createValueTypeCell(
+        "Discrete ordinal",
+        "Ordered categories, but distances between ranks are not meaningfully measurable.",
+        "School grade, rank, Likert scale, educational attainment, T-shirt size, pain level, satisfaction (low-medium-high).",
+        "Ordinal data are in practice almost always discrete.",
+        "default",
+    ));
+    matrix.appendChild(createValueTypeCell(
+        "Discrete interval",
+        "Ordered values with meaningful differences, but no true zero.",
+        "Calendar year, IQ score, temperature in whole °C, temperature in whole °F, time of day in whole minutes, questionnaire sum score (e.g., SUS score).",
+        "",
+        "default",
+    ));
+    matrix.appendChild(createValueTypeCell(
+        "Discrete ratio",
+        "Ordered values with meaningful differences and a true zero, so ratios are meaningful.",
+        "Number of children, errors, correct answers, visits, page count.",
+        "Some variables are conceptually continuous, but may be recorded discretely due to rounding or measurement resolution; e.g., age may be stored in whole years rather than with finer precision.",
+        "default",
+    ));
+
+    const continuousHeader = document.createElement("div");
+    continuousHeader.style.padding = "12px 14px";
+    continuousHeader.style.border = "1px solid var(--bs-border-color, #d5dde7)";
+    continuousHeader.style.borderRadius = "14px";
+    continuousHeader.style.background = "#f5f8fb";
+    continuousHeader.style.fontWeight = "700";
+    continuousHeader.style.color = "var(--bs-heading-color, #16324f)";
+    continuousHeader.textContent = "Continuous";
+    matrix.appendChild(continuousHeader);
+
+    matrix.appendChild(createValueTypeCell(
+        "Continuous nominal",
+        "Not usually meaningful in this form.",
+        "—",
+        "Nominal variables are categorical and therefore typically discrete rather than continuous.",
+        "muted",
+    ));
+    matrix.appendChild(createValueTypeCell(
+        "Continuous ordinal",
+        "Not usually meaningful in this form.",
+        "— / rarely meaningful.",
+        "Ordinal variables are typically represented by discrete ordered categories rather than continuous values.",
+        "muted",
+    ));
+    matrix.appendChild(createValueTypeCell(
+        "Continuous interval",
+        "Ordered values with meaningful differences, but no true zero.",
+        "Temperature in °C, temperature in °F, time of day, date on a continuous time axis, mean questionnaire score (e.g., NASA-TLX mean or weighted score).",
+        "",
+        "default",
+    ));
+    matrix.appendChild(createValueTypeCell(
+        "Continuous ratio",
+        "Ordered values with meaningful differences and a true zero, so ratios are meaningful.",
+        "Height, weight, distance, duration, reaction time, speed, volume.",
+        "",
+        "default",
+    ));
+
+    scrollRegion.appendChild(matrix);
+    wrapper.appendChild(scrollRegion);
+
+    return wrapper;
+}
+
 
 let selectedResult = null;
 let pendingResultScroll = false;
@@ -6981,8 +7160,17 @@ function renderResult() {
             pendingResultScroll = false;
         }
     } else if (match.length > 1) {
-        resultArea.innerHTML =
-            '<p class="small">More than one compatible route remains. Answer the next question to resolve the model choice.</p>';
+        resultArea.innerHTML = "";
+        if (key === "dv_kind" || key === "iv_kind") {
+            resultArea.appendChild(createValueTypeInfographic());
+            const spacer = document.createElement("div");
+            spacer.style.height = "12px";
+            resultArea.appendChild(spacer);
+        }
+        const hint = document.createElement("p");
+        hint.className = "small";
+        hint.textContent = "More than one compatible route remains. Answer the next question to resolve the model choice.";
+        resultArea.appendChild(hint);
     } else {
         resultArea.innerHTML =
             '<p class="small">No compatible route remains. Clear the last choice and try a different branch.</p>';
