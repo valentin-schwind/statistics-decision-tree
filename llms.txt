@@ -1,0 +1,48 @@
+# Statistical Decision Tree
+
+> Interactive web application for selecting statistical tests and models in HCI research, teaching, and early analysis planning.
+
+## Canonical URL
+
+- https://valentin-schwind.github.io/statistics-decision-tree/
+
+## Summary
+
+- The Statistical Decision Tree is part of the HCI User Studies Toolkit.
+- It guides users through study-design questions to identify suitable statistical tests or models.
+- It includes assumption checks, effect-size guidance, post-hoc options, interpretation notes, and example code in R and Python.
+- The main audience is students, novice researchers, teachers, and practitioners working with HCI or adjacent empirical user studies.
+
+## Main Topics Covered
+
+- Statistical test selection
+- Parametric versus nonparametric routes
+- t-tests, ANOVA, repeated-measures ANOVA, ANCOVA
+- Linear regression and multiple regression
+- Linear mixed models and robust alternatives
+- Chi-square, Fisher's exact, McNemar, and marginal homogeneity tests
+- Logistic regression, ordinal regression, count regression
+- MANOVA, PERMANOVA, ART, GEE, and GLMM-related guidance
+- Post-hoc procedures, effect sizes, and interpretation help
+
+## Intended Use
+
+- Teaching introductory and intermediate statistics for HCI and user studies
+- Supporting early study planning and analysis orientation
+- Helping users identify relevant model families before deeper statistical consultation
+
+## Limitations
+
+- The tool is didactic orientation support, not a substitute for statistical supervision.
+- Final method choices still depend on study design, measurement quality, missingness, assumptions, and substantive research goals.
+
+## Maintainer
+
+- Prof. Dr. Valentin Schwind
+- Hochschule der Medien Stuttgart
+- https://valentin-schwind.de
+
+## Source
+
+- Repository: https://github.com/valentin-schwind/statistics-decision-tree
+- Toolkit paper: https://doi.org/10.1145/3544549.3585890
