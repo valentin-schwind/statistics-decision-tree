@@ -2571,6 +2571,18 @@ function escapeHtml(s) {
     );
 }
 
+function escapeCodeHtml(s) {
+    return String(s).replace(
+        /[&<>]/g,
+        (m) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+            })[m],
+    );
+}
+
 /* Keep code examples readable without introducing a heavy client-side highlighter dependency. */
 function renderCodeMarkup(code, language) {
     const placeholderPrefix = "__CODE_TOKEN__";
@@ -2587,17 +2599,18 @@ function renderCodeMarkup(code, language) {
             value,
         );
 
-    let highlighted = escapeHtml(code || "# not available");
+    let highlighted = String(code || "# not available");
 
     highlighted = highlighted.replace(
         /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g,
-        (match) => storeToken(`<span class="code-token-string">${match}</span>`),
+        (match) => storeToken(`<span class="code-token-string">${escapeCodeHtml(match)}</span>`),
     );
     highlighted = highlighted.replace(
         /(^|\n)(\s*#.*?$)/gm,
         (match, lineBreak, comment) =>
-            `${lineBreak}${storeToken(`<span class="code-token-comment">${comment}</span>`)}`,
+            `${lineBreak}${storeToken(`<span class="code-token-comment">${escapeCodeHtml(comment)}</span>`)}`,
     );
+    highlighted = escapeCodeHtml(highlighted);
     highlighted = highlighted.replace(
         /\b\d+(?:\.\d+)?\b/g,
         '<span class="code-token-number">$&</span>',
