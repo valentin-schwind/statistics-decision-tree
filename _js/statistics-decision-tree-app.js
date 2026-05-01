@@ -3700,9 +3700,10 @@ function detectParametricContext(rowsIgnoringParametric) {
 function codeBlockCard(title, code) {
     const div = document.createElement("div");
     div.className = "assumption-card";
+    const language = detectCodeLanguage(title);
     div.innerHTML =
         '<h3>' + escapeHtml(title) + '</h3>' +
-        '<div class="mono">' + escapeHtml(code || "# not available") + '</div>';
+        '<pre class="mono code-block">' + renderCodeMarkup(code || "# not available", language) + '</pre>';
     return div;
 }
 
