@@ -719,7 +719,7 @@ const rows = [
         what_it_does: "Tests paired binary categorical outcomes.",
         r_code: "tab <- table(df$before, df$after)\nmcnemar.test(tab)",
         python_code:
-            "from statsmodels.stats.contingency_tables import mcnemar\nmcnemar(tab, exact=True)",
+            'import pandas as pd\nfrom statsmodels.stats.contingency_tables import mcnemar\n\ntab = pd.crosstab(df["before"], df["after"])\nmcnemar(tab, exact=True)',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
@@ -734,7 +734,7 @@ const rows = [
         dv_kind: "discrete",
         iv_count: "1",
         iv_kind: "discrete",
-        iv_levels: "gt2",
+        iv_levels: "2",
         design: "within",
         dv_parametric: "",
         dv_subtype: "nominal",
@@ -746,13 +746,40 @@ const rows = [
             "For paired nominal outcomes with more than two matched categories in a square table, Stuart-Maxwell targets marginal homogeneity, whereas Bowker-type symmetry tests target symmetry of the full off-diagonal pattern.",
         r_code: "tab <- table(df$before, df$after)\n\n# marginal homogeneity\nDescTools::StuartMaxwellTest(tab)\n\n# symmetry of the full square table (Bowker-type omnibus)\nrcompanion::nominalSymmetryTest(tab, exact = FALSE)",
         python_code:
-            "from statsmodels.stats.contingency_tables import SquareTable\nsq = SquareTable(tab)\nsq.homogeneity()   # Stuart-Maxwell / marginal homogeneity\n# sq.symmetry()    # Bowker / symmetry",
+            'import pandas as pd\nfrom statsmodels.stats.contingency_tables import SquareTable\n\ntab = pd.crosstab(df["before"], df["after"])\nsq = SquareTable(tab)\nsq.homogeneity()   # Stuart-Maxwell / marginal homogeneity\n# sq.symmetry()    # Bowker / symmetry',
         bayes_test: "",
         bayes_r_code: "",
         bayes_python_code: "# not available: no standard maintained Python package provides a simple default Bayesian contingency-table test analogous to BayesFactor::contingencyTableBF",
         effect_sizes: "No standard omnibus effect size",
         follow_up_questions:
             "Choose Stuart-Maxwell for marginal homogeneity and Bowker-type symmetry only when symmetry of the full square table is the target. Report the omnibus statistic and inspect off-diagonal asymmetries rather than forcing a generic effect-size label.",
+        equivalence_option: "",
+    },
+    {
+        id: "D03b",
+        dv_count: "1",
+        dv_kind: "discrete",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "gt2",
+        design: "within",
+        dv_parametric: "",
+        dv_subtype: "binary",
+        route: "",
+        status: "resolved",
+        recommended_test: "Cochran's Q test",
+        what_it_does:
+            "Tests whether the success proportion differs across more than two paired binary conditions.",
+        r_code:
+            "fit <- rstatix::cochran_qtest(df, y ~ condition | subject)\nfit",
+        python_code:
+            'import pandas as pd\nfrom statsmodels.stats.contingency_tables import cochrans_q\n\n# y must be coded as 0/1; one row per subject-condition observation\nwide = df.pivot(index="subject", columns="condition", values="y")\ncochrans_q(wide.to_numpy())',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "No standard omnibus effect size",
+        follow_up_questions:
+            "If the omnibus test is significant, localize differences with planned or pairwise McNemar comparisons and multiplicity correction.",
         equivalence_option: "",
     },
     {
@@ -4772,7 +4799,7 @@ function interpretationHint(testName) {
         return "Interpret exponentiated coefficients as odds-based effects and report a suitable pseudo-R^2.";
     if (/poisson|negative binomial|count/.test(t))
         return "Interpret exponentiated coefficients as incidence-rate effects and check dispersion or zero inflation if relevant.";
-    if (/chi-square|fisher|mcnemar|bowker|stuart-maxwell/.test(t))
+    if (/chi-square|fisher|mcnemar|cochran|bowker|stuart-maxwell/.test(t))
         return "Interpret the table pattern together with the omnibus statistic and inspect cell residuals or off-diagonal asymmetries when they are substantively important.";
     if (/manova/.test(t))
         return "Interpret the multivariate omnibus first and then move to protected univariate follow-ups if warranted.";
