@@ -2717,6 +2717,22 @@ function currentStageKey() {
     }
     return null;
 }
+
+function currentVisualStageKey() {
+    const key = currentStageKey();
+
+    if (key) {
+        return key;
+    }
+
+    const match = matchingRows(answers);
+    if (match.length === 1 || routeChooserConfig(match)) {
+        return "result";
+    }
+
+    return null;
+}
+
 function optionsForStage(stageKey) {
     return Array.from(
         new Set(
@@ -2900,9 +2916,7 @@ function scrollTreeToActiveStage() {
         return;
     }
 
-    const currentKey =
-        currentStageKey() ||
-        (matchingRows(answers).length === 1 ? "result" : null);
+    const currentKey = currentVisualStageKey();
     const stageCenter = currentKey ? layout.stageCenters.get(currentKey) : null;
 
     if (stageCenter === undefined || stageCenter === null) {
@@ -2965,28 +2979,32 @@ for (const s of stageDefs) {
     );
 }
 function nodeState(node) {
-    const compatible = matchingRows(answers).some((r) =>
+    const match = matchingRows(answers);
+    const compatible = match.some((r) =>
         node.rowIds.has(r.id),
     );
     const nextKey = currentStageKey();
+    const routeChoicePending =
+        node.kind === "result" &&
+        !nextKey &&
+        compatible &&
+        Boolean(routeChooserConfig(match));
     const resultResolved =
         node.kind === "result" &&
-        matchingRows(answers).length === 1 &&
+        match.length === 1 &&
         !nextKey &&
         compatible;
+    const nextOption =
+        node.kind === "result"
+            ? resultResolved || routeChoicePending
+            : node.stage === nextKey && compatible;
     const selected =
         (node.kind !== "result" &&
             answers[node.stage] !== undefined &&
             norm(answers[node.stage]) === norm(node.value) &&
             compatible) ||
         resultResolved;
-    const clickable =
-        (node.kind === 'result' && resultResolved) ||
-        (node.kind !== 'result' &&
-            ((node.stage === nextKey && compatible) ||
-                (answers[node.stage] !== undefined &&
-                    norm(answers[node.stage]) === norm(node.value) &&
-                    compatible)));
+    const clickable = node.kind !== "root";
     const answeredStages = stageDefs
         .filter(
             (s) =>
@@ -2998,7 +3016,7 @@ function nodeState(node) {
         : null;
     const current =
         compatible &&
-        ((node.kind === "result" && resultResolved) ||
+        ((node.kind === "result" && (resultResolved || routeChoicePending)) ||
             (node.kind !== "result" &&
                 node.stage === lastAnsweredStage &&
                 answers[node.stage] !== undefined &&
@@ -3006,8 +3024,10 @@ function nodeState(node) {
     return {
         compatible,
         selected,
+        nextOption,
         clickable,
         resultResolved,
+        routeChoicePending,
         current,
     };
 }
@@ -3015,42 +3035,84 @@ function edgeState(edge) {
     const a = nodeState(edge.from),
         b = nodeState(edge.to);
     const selectedPath =
-        a.compatible &&
-        b.compatible &&
         (a.selected || a.current) &&
         (b.selected || b.current);
+    const optionPath =
+        (a.selected || a.current) &&
+        (b.nextOption || b.current);
+
     return {
         compatible: a.compatible && b.compatible,
         selectedPath,
+        optionPath,
     };
 }
-function handleNodeClick(node) {
-    if (node.kind === 'result') {
-        const st = nodeState(node);
-        if (st.resultResolved) {
-            selectedResult = matchingRows(answers)[0];
-            pendingResultScroll = true;
-            pendingAssumptionScroll = false;
-            render();
+
+function routeValueForResultNode(node) {
+    const routeChoices = matchingRows(answers)
+        .filter((row) => node.rowIds.has(row.id))
+        .map((row) => norm(row.route))
+        .filter(Boolean);
+    const uniqueRoutes = Array.from(new Set(routeChoices));
+
+    return uniqueRoutes.length === 1 ? uniqueRoutes[0] : "";
+}
+
+function nodeSteps(node) {
+    const steps = [];
+    let currentNode = node;
+
+    while (currentNode && currentNode.kind !== "root") {
+        steps.push({
+            stage: currentNode.stage,
+            value: currentNode.value,
+            kind: currentNode.kind,
+        });
+        currentNode = currentNode.parent;
+    }
+
+    return steps.reverse();
+}
+
+function applyNodeSelection(node) {
+    const steps = nodeSteps(node);
+
+    for (const key of Object.keys(answers)) {
+        delete answers[key];
+    }
+
+    for (const step of steps) {
+        if (step.stage === "result") {
+            continue;
         }
+        answers[step.stage] = step.value;
+    }
+
+    delete answers.route;
+
+    if (node.kind === "result") {
+        const routeValue = routeValueForResultNode(node);
+        if (routeValue) {
+            answers.route = routeValue;
+        }
+    }
+}
+
+function handleNodeClick(node) {
+    if (node.kind === "root") {
         return;
     }
 
-    const st = nodeState(node);
-    if (!st.clickable) return;
-
+    applyNodeSelection(node);
     selectedResult = null;
-    pendingResultScroll = false;
-    pendingAssumptionScroll = false;
-
-    if (answers[node.stage] !== undefined && norm(answers[node.stage]) === norm(node.value)) {
-        clearFrom(node.stage);
-    } else {
-        clearFrom(node.stage);
-        answers[node.stage] = node.value;
-    }
+    pendingResultScroll = node.kind === "result";
     pendingAssumptionScroll = currentStageKey() === "dv_parametric";
+    pendingTreeViewportScroll = true;
     render();
+
+    if (node.kind === "result") {
+        scrollToSection("resultArea");
+    }
 }
 function drawTree() {
     const width = Math.max(1280, layout.maxX + 140);
@@ -3061,9 +3123,7 @@ function drawTree() {
     );
     overviewSvg.innerHTML = "";
     const ns = "http://www.w3.org/2000/svg";
-    const currentKey =
-        currentStageKey() ||
-        (matchingRows(answers).length === 1 ? "result" : null);
+    const currentKey = currentVisualStageKey();
     if (currentKey) {
         const idx = stageDefs.findIndex(
             (s) => s.key === currentKey,
@@ -3188,7 +3248,7 @@ function drawTree() {
             baseStroke = "var(--selected-border)";
             hoverFill = "#68c679";
             hoverStroke = "#68c679";
-        } else if (st.clickable) {
+        } else if (st.nextOption) {
             baseFill = "var(--clickable)";
             baseStroke = "var(--clickable-border)";
             hoverFill = "#ff9440";
@@ -3223,7 +3283,7 @@ function drawTree() {
             "class",
             "node-label" +
             (isResult ? " result" : "") +
-            (st.clickable ? " clickable-label" : "") +
+            ((st.nextOption || st.current || st.selected) ? " clickable-label" : "") +
             (st.compatible || st.selected ? "" : " dark"),
         );
         const displayNodeLabel = formatStats(node.label);
