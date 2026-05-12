@@ -4,7 +4,7 @@
 
 ## Canonical URL
 
-- https://valentin-schwind.github.io/statistics-decision-tree/
+- https://valentin-schwind.github.io/statistical-decision-tree/
 
 ## Summary
 
@@ -44,5 +44,5 @@
 
 ## Source
 
-- Repository: https://github.com/valentin-schwind/statistics-decision-tree
+- Repository: https://github.com/valentin-schwind/statistical-decision-tree
 - Toolkit paper: https://doi.org/10.1145/3544549.3585890

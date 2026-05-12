@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Residual Diagnostics</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 20px;
+			line-height: 1.4;
+		}
+
+		h1, h2, h3 {
+			margin: 0 0 8px 0;
+		}
+
+		p {
+			margin: 0 0 16px 0;
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(220px, 240px));
+			gap: 14px;
+			margin-bottom: 28px;
+			justify-content: start;
+		}
+
+		.panel {
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			padding: 10px;
+			background: #fff;
+		}
+
+		.panel h3 {
+			font-size: 15px;
+		}
+
+		.mark-good {
+			color: #1f9d55;
+			font-weight: bold;
+		}
+
+		.mark-bad {
+			color: #d93025;
+			font-weight: bold;
+		}
+
+		.chart-wrap {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 1 / 1;
+			max-width: 220px;
+			margin: 0 auto;
+		}
+
+		.chart-wrap canvas {
+			position: absolute;
+			inset: 0;
+			width: 100% !important;
+			height: 100% !important;
+		}
+	</style>
+</head>
+<body>
+	<h1>Residual Diagnostics</h1>
+	<p>Statische positive und negative Beispiele für visuelle Residualdiagnostik.</p>
+
+	<h2>Positive example</h2>
+	<div class="grid">
+		<div class="panel">
+			<h3>Q-Q plot <span class="mark-good">✔</span></h3>
+			<div class="chart-wrap">
+				<canvas id="qqGood"></canvas>
+			</div>
+		</div>
+		<div class="panel">
+			<h3>Residuals vs fitted <span class="mark-good">✔</span></h3>
+			<div class="chart-wrap">
+				<canvas id="rvfGood"></canvas>
+			</div>
+		</div>
+		<div class="panel">
+			<h3>Histograms by within condition <span class="mark-good">✔</span></h3>
+			<div class="chart-wrap">
+				<canvas id="histGood"></canvas>
+			</div>
+		</div>
+	</div>
+
+	<h2>Negative example</h2>
+	<div class="grid">
+		<div class="panel">
+			<h3>Q-Q plot <span class="mark-bad">✖</span></h3>
+			<div class="chart-wrap">
+				<canvas id="qqBad"></canvas>
+			</div>
+		</div>
+		<div class="panel">
+			<h3>Residuals vs fitted <span class="mark-bad">✖</span></h3>
+			<div class="chart-wrap">
+				<canvas id="rvfBad"></canvas>
+			</div>
+		</div>
+		<div class="panel">
+			<h3>Histograms by within condition <span class="mark-bad">✖</span></h3>
+			<div class="chart-wrap">
+				<canvas id="histBad"></canvas>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		function normalPdf(x, mu, sigma) {
+			return Math.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * Math.sqrt(2 * Math.PI));
+		}
+
+		function gaussianCurve(mu, sigma, totalCount, binWidth, xMin, xMax, step) {
+			const points = [];
+			for (let x = xMin; x <= xMax; x += step) {
+				const y = totalCount * binWidth * normalPdf(x, mu, sigma);
+				points.push({x, y});
+			}
+			return points;
+		}
+
+		function histogramBars(binCenters, counts) {
+			return binCenters.map((x, i) => ({x, y: counts[i]}));
+		}
+
+		function datasetMaxY(datasets) {
+			let maxY = 0;
+
+			for (const dataset of datasets) {
+				for (const point of dataset.data) {
+					let y = 0;
+
+					if (typeof point === "number") {
+						y = point;
+					} else if (point && typeof point === "object" && "y" in point) {
+						y = point.y;
+					}
+
+					if (y > maxY) {
+						maxY = y;
+					}
+				}
+			}
+
+			return maxY;
+		}
+
+		function makeScatterChart(id, datasets, xTitle, yTitle, xOptions = {}, yOptions = {}) {
+			return new Chart(document.getElementById(id), {
+				type: "scatter",
+				data: {
+					datasets: datasets
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							labels: {
+								boxWidth: 10,
+								font: {
+									size: 9
+								}
+							}
+						}
+					},
+					scales: {
+						x: {
+							type: "linear",
+							title: {
+								display: true,
+								text: xTitle
+							},
+							ticks: {
+								font: {
+									size: 9
+								}
+							},
+							...xOptions
+						},
+						y: {
+							title: {
+								display: true,
+								text: yTitle
+							},
+							ticks: {
+								font: {
+									size: 9
+								}
+							},
+							...yOptions
+						}
+					}
+				}
+			});
+		}
+
+		function makeHistogramChart(id, datasets, xTitle, yTitle) {
+			const maxY = datasetMaxY(datasets);
+			const paddedMaxY = Math.ceil(maxY * 1.15);
+
+			return new Chart(document.getElementById(id), {
+				type: "bar",
+				data: {
+					datasets: datasets
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					interaction: {
+						mode: "nearest",
+						intersect: false
+					},
+					plugins: {
+						legend: {
+							labels: {
+								boxWidth: 10,
+								font: {
+									size: 9
+								},
+								filter: function(legendItem) {
+									return !legendItem.text.startsWith("Ideal ");
+								}
+							}
+						}
+					},
+					scales: {
+						x: {
+							type: "linear",
+							min: -3.25,
+							max: 3.25,
+							title: {
+								display: true,
+								text: xTitle
+							},
+							ticks: {
+								stepSize: 0.5,
+								font: {
+									size: 8
+								}
+							},
+							offset: false
+						},
+						y: {
+							beginAtZero: true,
+							max: paddedMaxY,
+							title: {
+								display: true,
+								text: yTitle
+							},
+							ticks: {
+								font: {
+									size: 9
+								}
+							}
+						}
+					}
+				}
+			});
+		}
+
+		const binCenters = [-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+		const binWidth = 0.5;
+
+		const posA = [1, 4, 7, 9, 7, 4, 1, 0, 0, 0, 0, 0, 0];
+		const posB = [0, 0, 0, 1, 4, 7, 9, 7, 4, 1, 0, 0, 0];
+		const posC = [0, 0, 0, 0, 0, 0, 1, 4, 7, 9, 7, 4, 1];
+
+		const negA = [5, 1, 8, 2, 6, 1, 4, 0, 3, 1, 2, 0, 1];
+		const negB = [0, 3, 1, 6, 2, 8, 3, 5, 2, 6, 1, 4, 0];
+		const negC = [2, 0, 4, 1, 0, 5, 2, 1, 6, 2, 8, 3, 5];
+
+		const totalA = posA.reduce((a, b) => a + b, 0);
+		const totalB = posB.reduce((a, b) => a + b, 0);
+		const totalC = posC.reduce((a, b) => a + b, 0);
+
+		const negTotalA = negA.reduce((a, b) => a + b, 0);
+		const negTotalB = negB.reduce((a, b) => a + b, 0);
+		const negTotalC = negC.reduce((a, b) => a + b, 0);
+
+		const idealA = gaussianCurve(-1.5, 0.55, totalA, binWidth, -3.2, 3.2, 0.02);
+		const idealB = gaussianCurve(0.0, 0.55, totalB, binWidth, -3.2, 3.2, 0.02);
+		const idealC = gaussianCurve(1.5, 0.55, totalC, binWidth, -3.2, 3.2, 0.02);
+
+		const idealBadA = gaussianCurve(-1.5, 0.40, negTotalA, binWidth, -3.2, 3.2, 0.02);
+		const idealBadB = gaussianCurve(0.0, 0.70, negTotalB, binWidth, -3.2, 3.2, 0.02);
+		const idealBadC = gaussianCurve(1.5, 0.95, negTotalC, binWidth, -3.2, 3.2, 0.02);
+
+		makeScatterChart(
+			"qqGood",
+			[
+				{
+					label: "Residuals",
+					data: [
+						{x: -2.0, y: -1.9},
+						{x: -1.5, y: -1.45},
+						{x: -1.0, y: -1.02},
+						{x: -0.5, y: -0.48},
+						{x: 0.0, y: 0.02},
+						{x: 0.5, y: 0.47},
+						{x: 1.0, y: 1.03},
+						{x: 1.5, y: 1.52},
+						{x: 2.0, y: 2.05}
+					],
+					backgroundColor: "rgba(60, 60, 60, 0.8)"
+				},
+				{
+					label: "Reference",
+					type: "line",
+					data: [
+						{x: -2.1, y: -2.1},
+						{x: 2.1, y: 2.1}
+					],
+					showLine: true,
+					pointRadius: 0,
+					borderWidth: 1.5,
+					borderColor: "rgba(120, 120, 120, 1)"
+				}
+			],
+			"Theoretical quantiles",
+			"Sample quantiles",
+			{ min: -2.2, max: 2.2 },
+			{ min: -2.2, max: 2.2 }
+		);
+
+		makeScatterChart(
+			"rvfGood",
+			[
+				{
+					label: "Residuals",
+					data: [
+						{x: 1, y: -0.3},
+						{x: 2, y: 0.2},
+						{x: 3, y: -0.2},
+						{x: 4, y: 0.1},
+						{x: 5, y: -0.1},
+						{x: 6, y: 0.3},
+						{x: 7, y: -0.2},
+						{x: 8, y: 0.1},
+						{x: 9, y: -0.25},
+						{x: 10, y: 0.15},
+						{x: 11, y: -0.1},
+						{x: 12, y: 0.05}
+					],
+					backgroundColor: "rgba(60, 60, 60, 0.8)"
+				},
+				{
+					label: "Zero line",
+					type: "line",
+					data: [
+						{x: 1, y: 0},
+						{x: 12, y: 0}
+					],
+					showLine: true,
+					pointRadius: 0,
+					borderWidth: 1.5,
+					borderColor: "rgba(120, 120, 120, 1)"
+				}
+			],
+			"Fitted values",
+			"Residuals",
+			{ min: 1, max: 12 },
+			{ min: -2.2, max: 2.2 }
+		);
+
+		makeHistogramChart(
+			"histGood",
+			[
+				{
+					type: "bar",
+					label: "A",
+					data: histogramBars(binCenters, posA),
+					backgroundColor: "rgba(54, 162, 235, 0.45)",
+					borderColor: "rgba(54, 162, 235, 1)",
+					borderWidth: 1,
+					barThickness: 7,
+					order: 2
+				},
+				{
+					type: "line",
+					label: "Ideal A",
+					data: idealA,
+					borderColor: "rgba(54, 162, 235, 1)",
+					borderDash: [5, 4],
+					borderWidth: 2,
+					pointRadius: 0,
+					tension: 0,
+					fill: false,
+					order: 1
+				},
+				{
+					type: "bar",
+					label: "B",
+					data: histogramBars(binCenters, posB),
+					backgroundColor: "rgba(75, 192, 192, 0.45)",
+					borderColor: "rgba(75, 192, 192, 1)",
+					borderWidth: 1,
+					barThickness: 7,
+					order: 2
+				},
+				{
+					type: "line",
+					label: "Ideal B",
+					data: idealB,
+					borderColor: "rgba(75, 192, 192, 1)",
+					borderDash: [5, 4],
+					borderWidth: 2,
+					pointRadius: 0,
+					tension: 0,
+					fill: false,
+					order: 1
+				},
+				{
+					type: "bar",
+					label: "C",
+					data: histogramBars(binCenters, posC),
+					backgroundColor: "rgba(255, 159, 64, 0.45)",
+					borderColor: "rgba(255, 159, 64, 1)",
+					borderWidth: 1,
+					barThickness: 7,
+					order: 2
+				},
+				{
+					type: "line",
+					label: "Ideal C",
+					data: idealC,
+					borderColor: "rgba(255, 159, 64, 1)",
+					borderDash: [5, 4],
+					borderWidth: 2,
+					pointRadius: 0,
+					tension: 0,
+					fill: false,
+					order: 1
+				}
+			],
+			"Residual value",
+			"Count"
+		);
+
+		makeScatterChart(
+			"qqBad",
+			[
+				{
+					label: "Residuals",
+					data: [
+						{x: -2.0, y: -3.0},
+						{x: -1.5, y: -2.1},
+						{x: -1.0, y: -1.3},
+						{x: -0.5, y: -0.6},
+						{x: 0.0, y: 0.1},
+						{x: 0.5, y: 0.9},
+						{x: 1.0, y: 1.9},
+						{x: 1.5, y: 3.0},
+						{x: 2.0, y: 4.2}
+					],
+					backgroundColor: "rgba(60, 60, 60, 0.8)"
+				},
+				{
+					label: "Reference",
+					type: "line",
+					data: [
+						{x: -2.1, y: -2.1},
+						{x: 2.1, y: 2.1}
+					],
+					showLine: true,
+					pointRadius: 0,
+					borderWidth: 1.5,
+					borderColor: "rgba(120, 120, 120, 1)"
+				}
+			],
+			"Theoretical quantiles",
+			"Sample quantiles",
+			{ min: -2.2, max: 2.2 },
+			{ min: -2.2, max: 4.4 }
+		);
+
+		makeScatterChart(
+			"rvfBad",
+			[
+				{
+					label: "Residuals",
+					data: [
+						{x: 1, y: -0.2},
+						{x: 2, y: 0.1},
+						{x: 3, y: -0.5},
+						{x: 4, y: 0.4},
+						{x: 5, y: -0.8},
+						{x: 6, y: 0.7},
+						{x: 7, y: -1.1},
+						{x: 8, y: 0.9},
+						{x: 9, y: -1.5},
+						{x: 10, y: 1.4},
+						{x: 11, y: -1.9},
+						{x: 12, y: 2.0}
+					],
+					backgroundColor: "rgba(60, 60, 60, 0.8)"
+				},
+				{
+					label: "Zero line",
+					type: "line",
+					data: [
+						{x: 1, y: 0},
+						{x: 12, y: 0}
+					],
+					showLine: true,
+					pointRadius: 0,
+					borderWidth: 1.5,
+					borderColor: "rgba(120, 120, 120, 1)"
+				}
+			],
+			"Fitted values",
+			"Residuals",
+			{ min: 1, max: 12 },
+			{ min: -2.2, max: 2.2 }
+		);
+
+		makeHistogramChart(
+			"histBad",
+			[
+				{
+					type: "bar",
+					label: "A",
+					data: histogramBars(binCenters, negA),
+					backgroundColor: "rgba(54, 162, 235, 0.45)",
+					borderColor: "rgba(54, 162, 235, 1)",
+					borderWidth: 1,
+					barThickness: 7,
+					order: 2
+				},
+				{
+					type: "line",
+					label: "Ideal A",
+					data: idealBadA,
+					borderColor: "rgba(54, 162, 235, 1)",
+					borderDash: [5, 4],
+					borderWidth: 2,
+					pointRadius: 0,
+					tension: 0,
+					fill: false,
+					order: 1
+				},
+				{
+					type: "bar",
+					label: "B",
+					data: histogramBars(binCenters, negB),
+					backgroundColor: "rgba(75, 192, 192, 0.45)",
+					borderColor: "rgba(75, 192, 192, 1)",
+					borderWidth: 1,
+					barThickness: 7,
+					order: 2
+				},
+				{
+					type: "line",
+					label: "Ideal B",
+					data: idealBadB,
+					borderColor: "rgba(75, 192, 192, 1)",
+					borderDash: [5, 4],
+					borderWidth: 2,
+					pointRadius: 0,
+					tension: 0,
+					fill: false,
+					order: 1
+				},
+				{
+					type: "bar",
+					label: "C",
+					data: histogramBars(binCenters, negC),
+					backgroundColor: "rgba(255, 159, 64, 0.45)",
+					borderColor: "rgba(255, 159, 64, 1)",
+					borderWidth: 1,
+					barThickness: 7,
+					order: 2
+				},
+				{
+					type: "line",
+					label: "Ideal C",
+					data: idealBadC,
+					borderColor: "rgba(255, 159, 64, 1)",
+					borderDash: [5, 4],
+					borderWidth: 2,
+					pointRadius: 0,
+					tension: 0,
+					fill: false,
+					order: 1
+				}
+			],
+			"Residual value",
+			"Count"
+		);
+	</script>
+</body>
+</html>

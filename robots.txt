@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://valentin-schwind.github.io/statistical-decision-tree/sitemap.xml

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confidence Intervals — Simple Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --panel: #ffffff;
+      --text: #222;
+      --muted: #555;
+      --line: #d1d5db;
+      --chart-bg: #ececec;
+      --bar: #b9b1b1;
+      --bar-stroke: #555;
+      --good: #15803d;
+      --bad: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+
+    .lead {
+      max-width: 70ch;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .note {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    .chart-wrap {
+      aspect-ratio: 0.92 / 1;
+      background: var(--chart-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    .caption {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 0.98rem;
+    }
+
+    .good { color: var(--good); font-weight: 700; }
+    .bad { color: var(--bad); font-weight: 700; }
+    .small { font-size: 0.92rem; color: var(--muted); }
+
+    .legend-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .symbol {
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .charts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Meaning of 95% Confidence Intervals</h1>
+    <p class="lead">
+      A 95% confidence interval shows a plausible range for the population mean. Narrower intervals mean more precision.
+      In repeated sampling, about 95% of such intervals would cover the true mean.
+    </p>
+
+    <div class="note">
+      <p><span class="good">✓ Useful classroom reading:</span> Confidence intervals visualize estimate <em>and</em> uncertainty.</p>
+      <p><span class="bad">✕ Do not say:</span> “There is a 95% probability that this one interval contains the true mean.”</p>
+      <p class="small">The examples below are simple visual heuristics for comparing two groups A and B.</p>
+    </div>
+
+    <section class="charts">
+      <div class="card">
+        <div class="chart-wrap"><canvas id="chart1"></canvas></div>
+        <div class="caption"><span class="good">✓ reject H0</span></div>
+      </div>
+
+      <div class="card">
+        <div class="chart-wrap"><canvas id="chart2"></canvas></div>
+        <div class="caption"><span class="small">inconclusive /<br> no clear evidence for H1</span></div>
+      </div>
+
+      <div class="card">
+        <div class="chart-wrap"><canvas id="chart3"></canvas></div>
+        <div class="caption"><span class="small">inconclusive /<br> no clear evidence for H1</span></div>
+      </div>
+
+      <div class="card">
+        <div class="chart-wrap"><canvas id="chart4"></canvas></div>
+        <div class="caption"><span class="bad">✕ reject H1</span></div>
+      </div>
+    </section>
+
+    <div class="legend-row">
+      <div><span class="symbol">A, B</span>group means</div>
+      <div><span class="symbol">error bars</span>95% confidence intervals</div>
+      <div><span class="symbol">note</span>CI overlap alone is not an exact significance test</div>
+      <div><span class="symbol">special case</span>one mean can lie inside the other CI, but not the other way around</div>
+    </div>
+  </div>
+
+  <script>
+    const bgPlugin = {
+      id: 'bgPlugin',
+      beforeDraw(chart) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        ctx.save();
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-bg').trim();
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+
+    const errorBarPlugin = {
+      id: 'errorBarPlugin',
+      afterDatasetsDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        const dataset = chart.data.datasets[0];
+        const errorData = dataset.errorBars;
+        ctx.save();
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--bar-stroke').trim();
+        ctx.lineWidth = 1.5;
+
+        dataset.data.forEach((value, i) => {
+          const xPos = x.getPixelForValue(chart.data.labels[i]);
+          const yLow = y.getPixelForValue(errorData[i].low);
+          const yHigh = y.getPixelForValue(errorData[i].high);
+          ctx.beginPath();
+          ctx.moveTo(xPos, yLow);
+          ctx.lineTo(xPos, yHigh);
+          ctx.moveTo(xPos - 6, yLow);
+          ctx.lineTo(xPos + 6, yLow);
+          ctx.moveTo(xPos - 6, yHigh);
+          ctx.lineTo(xPos + 6, yHigh);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+    };
+
+    function makeChart(id, values, errors) {
+      new Chart(document.getElementById(id), {
+        type: 'bar',
+        data: {
+          labels: ['A', 'B'],
+          datasets: [{
+            data: values,
+            errorBars: errors,
+            backgroundColor: ['#b9b1b1', '#b9b1b1'],
+            borderColor: ['#555', '#555'],
+            borderWidth: 1.2,
+            barThickness: 24
+          }]
+        },
+        options: {
+          animation: false,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#333', font: { size: 14 } }
+            },
+            y: {
+              min: 0,
+              max: 10,
+              display: false,
+              grid: { display: false },
+              border: { color: '#444' }
+            }
+          }
+        },
+        plugins: [bgPlugin, errorBarPlugin]
+      });
+    }
+
+    makeChart('chart1', [6.6, 3.1], [
+      { low: 6.0, high: 7.2 },
+      { low: 2.5, high: 3.7 }
+    ]);
+
+    makeChart('chart2', [6.6, 3.1], [
+      { low: 4.2, high: 9.0 },
+      { low: 0.7, high: 5.5 }
+    ]);
+
+    makeChart('chart3', [6.6, 4.6], [
+      { low: 5.9, high: 7.3 },
+      { low: 2.0, high: 7.2 }
+    ]);
+
+    makeChart('chart4', [6.5, 5.2], [
+      { low: 4.1, high: 8.9 },
+      { low: 3.0, high: 7.4 }
+    ]);
+  </script>
+</body>
+</html>

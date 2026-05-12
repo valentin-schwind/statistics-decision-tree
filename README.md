@@ -26,7 +26,7 @@ The project is a static web application and can be opened directly in a browser 
 
 The tool is intended as orientation support for students and novice researchers. It does not replace statistical training, supervision, or study-specific methodological consultation.
 
-If you want to adequately <a href="https://github.com/valentin-schwind/statistics-decision-tree/blob/master/HCIToolkit.bib"> cite</a> this work, and show us your amazing projects!
+If you want to adequately <a href="https://github.com/valentin-schwind/statistical-decision-tree/blob/master/HCIToolkit.bib"> cite</a> this work, and show us your amazing projects!
 
 ```
 @inproceedings{schwind2023a,
