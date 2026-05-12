@@ -1,0 +1,83 @@
+name: Deploy to Webserver
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-webserver
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      HCISTUDIES_HOST: ${{ secrets.HCISTUDIES_HOST || vars.HCISTUDIES_HOST }}
+      HCISTUDIES_PASSWORD: ${{ secrets.HCISTUDIES_PASSWORD || vars.HCISTUDIES_PASSWORD }}
+      HCISTUDIES_PORT: ${{ secrets.HCISTUDIES_PORT || vars.HCISTUDIES_PORT }}
+      HCISTUDIES_REMOTE_PATH: ${{ secrets.HCISTUDIES_REMOTE_PATH || vars.HCISTUDIES_REMOTE_PATH }}
+      HCISTUDIES_USER: ${{ secrets.HCISTUDIES_USER || vars.HCISTUDIES_USER }}
+      SSHPASS: ${{ secrets.HCISTUDIES_PASSWORD || vars.HCISTUDIES_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install deployment tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync sshpass
+
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+
+          for variable_name in HCISTUDIES_HOST HCISTUDIES_PASSWORD HCISTUDIES_PORT HCISTUDIES_REMOTE_PATH HCISTUDIES_USER; do
+            if [ -z "${!variable_name:-}" ]; then
+              echo "::error::${variable_name} is not configured"
+              exit 1
+            fi
+          done
+
+          configured_path="${HCISTUDIES_REMOTE_PATH%/}"
+          expected_path="statistical-decision-tree"
+
+          if [ "${configured_path#*=}" != "$configured_path" ]; then
+            configured_path="${configured_path##*=}"
+            configured_path="$(printf '%s' "$configured_path" | xargs)"
+            echo "::warning::HCISTUDIES_REMOTE_PATH included an assignment-like prefix; normalized to '$configured_path'"
+          fi
+
+          remote_path="${configured_path#/}"
+          remote_path="${remote_path##*/}"
+
+          if [ "$remote_path" != "$expected_path" ]; then
+            echo "::error::HCISTUDIES_REMOTE_PATH must resolve to '$expected_path' but is '$remote_path'"
+            exit 1
+          fi
+
+          echo "DEPLOY_REMOTE_PATH=$remote_path" >> "$GITHUB_ENV"
+
+      - name: Sync files to webserver
+        run: |
+          set -euo pipefail
+
+          rsync_error_file="$(mktemp)"
+
+          if ! rsync -az --delete \
+            --mkpath \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            -e "sshpass -e ssh -p $HCISTUDIES_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o PreferredAuthentications=password -o PubkeyAuthentication=no -o NumberOfPasswordPrompts=1" \
+            ./ \
+            "$HCISTUDIES_USER@$HCISTUDIES_HOST:$DEPLOY_REMOTE_PATH/" >"$rsync_error_file" 2>&1; then
+            rsync_error="$(tr '\n' ' ' < "$rsync_error_file" | xargs)"
+            echo "::error::Rsync deployment failed: $rsync_error"
+            exit 1
+          fi
