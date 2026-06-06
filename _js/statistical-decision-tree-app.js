@@ -6846,13 +6846,7 @@ function renderResolvedTestPanel(row) {
         panel.appendChild(codeExtra);
     }
 
-    // Interpretation guidance is collapsed by default to keep the default view lean.
-    const interpDetails = document.createElement("details");
-    interpDetails.className = "interp-extra";
-    const interpSummary = document.createElement("summary");
-    interpSummary.textContent = "How to interpret effect sizes & sources";
-    interpDetails.appendChild(interpSummary);
-    interpDetails.appendChild(
+    panel.appendChild(
         renderInterpretationPanel({
             effectNames,
             sourceType: "row",
@@ -6862,7 +6856,6 @@ function renderResolvedTestPanel(row) {
             testName: row.recommended_test,
         })
     );
-    panel.appendChild(interpDetails);
 
     return panel;
 }
