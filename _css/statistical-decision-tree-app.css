@@ -1308,10 +1308,11 @@ hr.sep {
     display: block;
     padding: 0.95rem 1rem;
     border-radius: 14px;
-    background: linear-gradient(180deg, #f4f8ff, #eef3fb);
-    border: 1px solid #d7e1ee;
+    background: #f5ecd3;
+    border: 1px solid #e4d5b0;
+    border-left: 4px solid #b8860b;
     white-space: normal;
-    color: #203247;
+    color: #374151;
 }
 
 .question-text strong,
