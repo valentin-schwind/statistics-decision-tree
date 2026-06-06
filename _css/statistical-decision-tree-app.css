@@ -1315,6 +1315,26 @@ hr.sep {
     color: #374151;
 }
 
+.citation-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.citation-copy-btn.btn {
+    font-size: 0.85rem;
+    color: #8a6508;
+    background: transparent;
+    border: 1px solid #b8860b;
+}
+
+.citation-copy-btn.btn:hover,
+.citation-copy-btn.btn:focus {
+    background: #b8860b;
+    color: #fff;
+}
+
 .question-text strong,
 .result-sub strong,
 .meta-value strong {
