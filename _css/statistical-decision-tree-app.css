@@ -394,22 +394,26 @@ body {
     }
 }
 
-.code-extra {
+.code-extra,
+.interp-extra {
     margin-top: 12px;
 }
 
-.code-extra > summary {
+.code-extra > summary,
+.interp-extra > summary {
     cursor: pointer;
     font-weight: 600;
     color: #0f766e;
     padding: 4px 0;
 }
 
-.code-extra > summary:hover {
+.code-extra > summary:hover,
+.interp-extra > summary:hover {
     text-decoration: underline;
 }
 
-.code-extra[open] > summary {
+.code-extra[open] > summary,
+.interp-extra[open] > summary {
     margin-bottom: 10px;
 }
 
