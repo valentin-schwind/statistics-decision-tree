@@ -6786,7 +6786,7 @@ function renderResolvedTestPanel(row) {
 
     panel.appendChild(
         createDecisionBanner(
-            'Use this test when the answers in the tree match this path. ' + reportingTip(row)
+            'Use this test when the answers in the tree match this path.'
         )
     );
 
@@ -6823,15 +6823,28 @@ function renderResolvedTestPanel(row) {
             showEffectCodeExamples ? eff.py : "",
         ),
     );
+    panel.appendChild(codeGrid);
+
+    // Secondary code (Bayesian / equivalence) is collapsed by default to keep the result lean.
+    const secondaryGrid = document.createElement("div");
+    secondaryGrid.className = "code-grid";
     if (row.bayes_test) {
-        codeGrid.appendChild(codeCard("Bayes R", row.bayes_r_code || "# not available", ""));
-        codeGrid.appendChild(codeCard("Bayes Python", row.bayes_python_code || "# not available", ""));
+        secondaryGrid.appendChild(codeCard("Bayes R", row.bayes_r_code || "# not available", ""));
+        secondaryGrid.appendChild(codeCard("Bayes Python", row.bayes_python_code || "# not available", ""));
     }
     if (hasActionableEquivalence(row)) {
-        codeGrid.appendChild(codeCard("Equivalence in R", getEquivalenceRCode(row) || "# not available", ""));
-        codeGrid.appendChild(codeCard("Equivalence in Python", getEquivalencePythonCode(row) || "# not available", ""));
+        secondaryGrid.appendChild(codeCard("Equivalence in R", getEquivalenceRCode(row) || "# not available", ""));
+        secondaryGrid.appendChild(codeCard("Equivalence in Python", getEquivalencePythonCode(row) || "# not available", ""));
     }
-    panel.appendChild(codeGrid);
+    if (secondaryGrid.children.length) {
+        const codeExtra = document.createElement("details");
+        codeExtra.className = "code-extra";
+        const codeSummary = document.createElement("summary");
+        codeSummary.textContent = "Bayesian & equivalence code";
+        codeExtra.appendChild(codeSummary);
+        codeExtra.appendChild(secondaryGrid);
+        panel.appendChild(codeExtra);
+    }
 
     panel.appendChild(
         renderInterpretationPanel({

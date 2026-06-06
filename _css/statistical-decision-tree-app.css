@@ -394,6 +394,25 @@ body {
     }
 }
 
+.code-extra {
+    margin-top: 12px;
+}
+
+.code-extra > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #0f766e;
+    padding: 4px 0;
+}
+
+.code-extra > summary:hover {
+    text-decoration: underline;
+}
+
+.code-extra[open] > summary {
+    margin-bottom: 10px;
+}
+
 .badge {
     display: inline-block;
     background: #eef2f7;
