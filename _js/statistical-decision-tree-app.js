@@ -3414,7 +3414,7 @@ function scrollTreeToActiveStage() {
 function assignY(node, ref) {
     if (!node.children.length) {
         node.y = ref.value;
-        ref.value += 34;
+        ref.value += 26;
         return node.y;
     }
     const ys = node.children.map((c) => assignY(c, ref));
@@ -3699,7 +3699,7 @@ function drawTree() {
         );
         const isResult = node.kind === "result";
         const w = isResult ? 240 : 100;
-        const h = 26;
+        const h = 22;
         const rect = document.createElementNS(ns, "rect");
         rect.setAttribute("x", node.x - w / 2);
         rect.setAttribute("y", node.y - h / 2);
