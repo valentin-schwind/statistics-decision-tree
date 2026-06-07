@@ -1379,6 +1379,149 @@ const rows = [
             "Check overdispersion and zero inflation; localise differences with planned contrasts and multiplicity correction if the omnibus is significant.",
         equivalence_option: "Define equivalence on the rate ratio.",
     },
+    {
+        id: "M12",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "both",
+        iv_levels: "2_or_gt2_plus_cont",
+        design: "between",
+        dv_parametric: "no",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Distance-based PERMANOVA with covariates",
+        what_it_does:
+            "Distribution-free multivariate test for a between-subjects design that mixes categorical factors and continuous covariates; both enter as terms in the distance-based model (adonis2).",
+        r_code: 'library(vegan)\n# D = dissimilarity matrix of the multivariate outcomes\nadonis2(D ~ group + covariate, data = df, by = "margin")',
+        python_code:
+            '# adonis2 with covariates: use R (vegan). scikit-bio PERMANOVA does not model covariates.',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "R^2 per term from the PERMANOVA table",
+        follow_up_questions:
+            "Enter covariates as model terms and use marginal (type-III-like) tests; check multivariate dispersion (betadisper) since PERMANOVA can confound location and dispersion.",
+        equivalence_option: "",
+    },
+    {
+        id: "M13",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "both",
+        iv_levels: "2_or_gt2_plus_cont",
+        design: "within",
+        dv_parametric: "yes",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Multivariate linear mixed model with covariates",
+        what_it_does:
+            "Multivariate (or per-outcome) linear mixed model for several continuous outcomes measured repeatedly, combining within-subject factors with continuous covariates as fixed effects and a random subject effect. This is the repeated-measures, multivariate analogue of MANCOVA.",
+        r_code: 'library(brms)\nbrm(mvbind(y1, y2) ~ condition + covariate + (1|subject), data = df)\n# or per-outcome:\n# lme4::lmer(y1 ~ condition + covariate + (1|subject), data = df)',
+        python_code:
+            '# fit per-outcome mixed models\nimport statsmodels.formula.api as smf\nfit = smf.mixedlm("y1 ~ condition + covariate", data=df, groups=df["subject"]).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multivariate multilevel model with covariates",
+        bayes_r_code:
+            "library(brms)\nbrm(mvbind(y1, y2) ~ condition + covariate + (1|subject), data = df)",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y1 ~ condition + covariate + (1|subject)", df)\nidata = model.fit()',
+        effect_sizes:
+            "per-outcome partial eta^2 / semi-partial R^2; marginal / conditional R^2",
+        follow_up_questions:
+            "Center continuous covariates; check the homogeneity-of-slopes assumption if interpreting adjusted factor effects; analyse outcomes jointly or per outcome with multiplicity control.",
+        equivalence_option:
+            "Define equivalence per outcome with multiplicity-aware bounds.",
+    },
+    {
+        id: "M14",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "both",
+        iv_levels: "2_or_gt2_plus_cont",
+        design: "within",
+        dv_parametric: "no",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Distance-based PERMANOVA with covariates (restricted within-subject permutations)",
+        what_it_does:
+            "Distribution-free multivariate test for repeated measures that mixes within-subject factors and continuous covariates, permuting within subjects (blocks) to respect the repeated structure.",
+        r_code: 'library(vegan)\nperm <- how(blocks = df$subject)\nadonis2(D ~ condition + covariate, data = df, permutations = perm, by = "margin")',
+        python_code:
+            '# restricted permutations + covariates: use R (vegan::adonis2 with blocks)',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "R^2 per term from the PERMANOVA table",
+        follow_up_questions:
+            "Restrict permutations to within subject (blocks); enter covariates as model terms; check multivariate dispersion (betadisper).",
+        equivalence_option: "",
+    },
+    {
+        id: "M15",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "both",
+        iv_levels: "2_or_gt2_plus_cont",
+        design: "both",
+        dv_parametric: "yes",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Multivariate linear mixed model with covariates (mixed design)",
+        what_it_does:
+            "Multivariate (or per-outcome) linear mixed model for several continuous outcomes in a mixed design with between- and within-subject factors plus continuous covariates as fixed effects and a random subject effect.",
+        r_code: 'library(brms)\nbrm(mvbind(y1, y2) ~ group * condition + covariate + (1|subject), data = df)',
+        python_code:
+            '# fit per-outcome mixed models\nimport statsmodels.formula.api as smf\nfit = smf.mixedlm("y1 ~ group * condition + covariate", data=df, groups=df["subject"]).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multivariate multilevel model with covariates",
+        bayes_r_code:
+            "library(brms)\nbrm(mvbind(y1, y2) ~ group * condition + covariate + (1|subject), data = df)",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y1 ~ group * condition + covariate + (1|subject)", df)\nidata = model.fit()',
+        effect_sizes:
+            "per-outcome partial eta^2 / semi-partial R^2; marginal / conditional R^2",
+        follow_up_questions:
+            "Center covariates; specify the random-effects structure for the within factor; analyse outcomes jointly or per outcome with multiplicity control.",
+        equivalence_option:
+            "Define equivalence per outcome with multiplicity-aware bounds.",
+    },
+    {
+        id: "M16",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "both",
+        iv_levels: "2_or_gt2_plus_cont",
+        design: "both",
+        dv_parametric: "no",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Distance-based PERMANOVA with covariates (restricted permutations, mixed design)",
+        what_it_does:
+            "Distribution-free multivariate test for a mixed design that combines between- and within-subject factors with continuous covariates, permuting within subjects (blocks) for the repeated factor.",
+        r_code: 'library(vegan)\nperm <- how(blocks = df$subject)\nadonis2(D ~ group * condition + covariate, data = df, permutations = perm, by = "margin")',
+        python_code:
+            '# restricted permutations + covariates: use R (vegan::adonis2 with blocks)',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "R^2 per term from the PERMANOVA table",
+        follow_up_questions:
+            "Restrict permutations for the within factor; enter covariates as model terms; check multivariate dispersion (betadisper).",
+        equivalence_option: "",
+    },
 ];
 
 /* =============================
