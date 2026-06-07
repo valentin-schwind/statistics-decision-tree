@@ -3428,7 +3428,7 @@ function assignX(node) {
             (s) => s.key === node.stage,
         );
         node.x =
-            70 + idx * 130 + (node.stage === "result" ? 90 : 0);
+            70 + idx * 130 + (node.stage === "result" ? 70 : 0);
     }
     node.children.forEach(assignX);
 }
@@ -3451,7 +3451,7 @@ for (const s of stageDefs) {
     const idx = stageDefs.findIndex((d) => d.key === s.key);
     layout.stageCenters.set(
         s.key,
-        70 + idx * 130 + (s.key === "result" ? 90 : 0),
+        70 + idx * 130 + (s.key === "result" ? 70 : 0),
     );
 }
 function nodeState(node) {
@@ -3591,11 +3591,11 @@ function handleNodeClick(node) {
     }
 }
 function drawTree() {
-    const width = Math.max(1280, layout.maxX + 140);
+    const width = layout.maxX + 160;
     const height = Math.max(500, layout.maxY + 48);
     overviewSvg.setAttribute(
         "viewBox",
-        "0 0 " + width + " " + height,
+        "-10 0 " + width + " " + height,
     );
     overviewSvg.innerHTML = "";
     const ns = "http://www.w3.org/2000/svg";
@@ -3614,13 +3614,13 @@ function drawTree() {
                 "x",
                 String(
                     layout.stageCenters.get(currentKey) -
-                    (isResultStage ? 150 : 70),
+                    (isResultStage ? 140 : 70),
                 ),
             );
             bg.setAttribute("y", "0");
             bg.setAttribute(
                 "width",
-                String(isResultStage ? 300 : 140),
+                String(isResultStage ? 280 : 140),
             );
             bg.setAttribute("height", String(height - 4));
             overviewSvg.appendChild(bg);
