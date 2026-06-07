@@ -6094,7 +6094,7 @@ function createEffectNameList(effectNames, sourceType = "row") {
     if ((effectNames || []).length === 1 && isEffectNote(effectNames[0])) {
         const note = document.createElement("div");
         note.className = "legacy-note";
-        note.textContent = normalizeDisplayEffectName(effectNames[0], sourceType);
+        note.textContent = "No standard omnibus effect size available";
         wrap.appendChild(note);
         return wrap;
     }
@@ -7211,7 +7211,9 @@ function renderResolvedTestPanel(row) {
     effectCard.className = "unified-card";
     effectCard.innerHTML =
         '<div class="section-kicker">Effect sizes</div>' +
-        '<p class="card-lead">A significant <em>p</em>-value only tells you whether an effect is present (below or above your alpha, usually .05). The effect size adds what the <em>p</em>-value cannot: how large that effect is — its magnitude and practical relevance.</p>';
+        (hasOnlyEffectNote(effectNames)
+            ? ''
+            : '<p class="card-lead">A significant <em>p</em>-value only tells you whether an effect is present (below or above your alpha, usually .05). The effect size adds what the <em>p</em>-value cannot: how large that effect is — its magnitude and practical relevance.</p>');
     effectCard.appendChild(createEffectNameList(effectNames, "row"));
     panel.appendChild(effectCard);
 
