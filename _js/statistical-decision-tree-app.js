@@ -7199,7 +7199,7 @@ function renderResolvedTestPanel(row) {
     intro.className = "unified-card unified-intro";
     intro.innerHTML =
         '<div class="section-kicker">Primary test</div>' +
-        '<h3>' + escapeHtml(row.recommended_test) + '</h3>' +
+        '<h2>' + escapeHtml(row.recommended_test) + '</h2>' +
         '<p>' + escapeHtml(row.what_it_does) + '</p>' +
         '<h4 class="unified-subhead">Interpretation focus</h4>' +
         '<p>' + escapeHtml(interpretationHint(row.recommended_test)) + '</p>' +
