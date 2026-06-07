@@ -7394,12 +7394,18 @@ function renderPosthocPanel(row) {
     const panel = document.createElement("div");
     panel.className = "unified-panel";
 
+    const decisionText =
+        getPosthocMethodGuidance(row, selectedProcedure) + ' Current correction: ' +
+        prettyAdjustMethod(state.adjust_method) + '. ' +
+        getAdjustMethodGuidance(row, selectedProcedure, state.adjust_method);
+
     const intro = document.createElement("div");
     intro.className = "unified-intro";
     intro.innerHTML =
         '<div class="section-kicker">Post-hoc</div>' +
         '<h3>Post-hoc options for ' + escapeHtml(row.recommended_test) + '</h3>' +
-        '<p>Choose a follow-up method and a matching p-value correction.</p>';
+        '<p>Choose a follow-up method and a matching p-value correction. ' +
+        escapeHtml(decisionText) + '</p>';
     panel.appendChild(intro);
 
     const optionsGrid = document.createElement("div");
@@ -7408,7 +7414,7 @@ function renderPosthocPanel(row) {
     const optionsCard = document.createElement("div");
     optionsCard.className = "unified-card";
     optionsCard.innerHTML =
-        '<h3>Available checks</h3>' +
+        '<div class="section-kicker">Available checks</div>' +
         '<p>Choose a post-hoc method.</p>';
 
     const procedureRow = document.createElement("div");
@@ -7437,7 +7443,7 @@ function renderPosthocPanel(row) {
     const correctionCard = document.createElement("div");
     correctionCard.className = "unified-card";
     correctionCard.innerHTML =
-        '<h3>P-value correction for this option</h3>' +
+        '<div class="section-kicker">P-value correction for this option</div>' +
         '<p>Choose a p-value correction method.</p>';
 
     const adjustRow = document.createElement("div");
@@ -7461,17 +7467,9 @@ function renderPosthocPanel(row) {
     optionsGrid.appendChild(correctionCard);
     panel.appendChild(optionsGrid);
 
-    panel.appendChild(
-        createDecisionBanner(
-            getPosthocMethodGuidance(row, selectedProcedure) + ' Current correction: ' +
-            prettyAdjustMethod(state.adjust_method) + '. ' +
-            getAdjustMethodGuidance(row, selectedProcedure, state.adjust_method)
-        )
-    );
-
     const effectCard = document.createElement("div");
     effectCard.className = "unified-card";
-    effectCard.innerHTML = '<h3>Effect sizes</h3>';
+    effectCard.innerHTML = '<div class="section-kicker">Effect sizes</div>';
     effectCard.appendChild(
         createEffectNameList(selectedProcedure.effect_sizes || [], "posthoc"),
     );
