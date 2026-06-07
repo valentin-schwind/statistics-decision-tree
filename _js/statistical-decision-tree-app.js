@@ -3428,7 +3428,7 @@ function assignX(node) {
             (s) => s.key === node.stage,
         );
         node.x =
-            70 + idx * 150 + (node.stage === "result" ? 90 : 0);
+            70 + idx * 130 + (node.stage === "result" ? 90 : 0);
     }
     node.children.forEach(assignX);
 }
@@ -3451,7 +3451,7 @@ for (const s of stageDefs) {
     const idx = stageDefs.findIndex((d) => d.key === s.key);
     layout.stageCenters.set(
         s.key,
-        70 + idx * 150 + (s.key === "result" ? 90 : 0),
+        70 + idx * 130 + (s.key === "result" ? 90 : 0),
     );
 }
 function nodeState(node) {

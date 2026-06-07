@@ -249,7 +249,7 @@ body {
 }
 
 .stage-header {
-    font-size: 13px;
+    font-size: 14px;
     fill: var(--header);
     text-anchor: middle;
     font-weight: 600;
@@ -274,7 +274,7 @@ body {
 }
 
 .node-label {
-    font-size: 14px;
+    font-size: 15px;
     dominant-baseline: middle;
     text-anchor: middle;
     pointer-events: none;
@@ -288,7 +288,7 @@ body {
 }
 
 .node-label.result {
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .node-label.dark {
