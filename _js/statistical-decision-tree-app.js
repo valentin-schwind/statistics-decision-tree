@@ -7197,14 +7197,14 @@ function renderResolvedTestPanel(row) {
 
     const intro = document.createElement("div");
     intro.className = "unified-card unified-intro";
+    const introParagraph = [row.what_it_does, interpretationHint(row.recommended_test), row.follow_up_questions]
+        .filter(Boolean)
+        .map(function (s) { s = String(s).trim(); return /[.!?]$/.test(s) ? s : s + "."; })
+        .join(" ");
     intro.innerHTML =
         '<div class="section-kicker">Primary test</div>' +
         '<h2>' + escapeHtml(row.recommended_test) + '</h2>' +
-        '<p>' + escapeHtml(row.what_it_does) + '</p>' +
-        '<h4 class="unified-subhead">Interpretation focus</h4>' +
-        '<p>' + escapeHtml(interpretationHint(row.recommended_test)) + '</p>' +
-        '<h4 class="unified-subhead">Optional checks</h4>' +
-        '<p>' + escapeHtml(row.follow_up_questions || 'No extra checks stored for this row.') + '</p>';
+        '<p>' + escapeHtml(introParagraph) + '</p>';
     panel.appendChild(intro);
 
     const effectCard = document.createElement("div");
