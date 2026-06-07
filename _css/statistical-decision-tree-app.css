@@ -1141,6 +1141,14 @@ hr.sep {
     margin-top: 8px;
 }
 
+/* Match the post-hoc choice-chip sizing so effect-size pills read as
+   the same family of pill across the resolved-result panel. */
+.effect-name-list .badge {
+    padding: 6px 11px;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
 .page-card.decision-tree-page {
     width: min(100%, 1440px);
     min-width: 0;
