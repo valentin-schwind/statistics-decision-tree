@@ -7702,14 +7702,24 @@ function renderResult() {
         resultArea.innerHTML = "";
         resultArea.appendChild(renderResolvedTestPanel(r));
 
+        const posthocSep = document.createElement("hr");
+        posthocSep.className = "sep";
+        resultArea.appendChild(posthocSep);
         if (r.posthoc && r.posthoc.available) {
-            const posthocSep = document.createElement("hr");
-            posthocSep.className = "sep";
-            resultArea.appendChild(posthocSep);
             const posthocPanel = renderPosthocPanel(r);
             if (posthocPanel) {
                 resultArea.appendChild(posthocPanel);
             }
+        } else {
+            const noPosthoc = document.createElement("div");
+            noPosthoc.className = "unified-panel";
+            noPosthoc.innerHTML =
+                '<div class="unified-intro">' +
+                '<div class="section-kicker">Post-hoc</div>' +
+                '<h3>No standard post-hoc test available</h3>' +
+                '<p>This test has no structured post-hoc follow-up family to choose from. Interpret the primary result directly — its effect size and confidence interval already answer the question.</p>' +
+                '</div>';
+            resultArea.appendChild(noPosthoc);
         }
 
         if (pendingResultScroll) {
