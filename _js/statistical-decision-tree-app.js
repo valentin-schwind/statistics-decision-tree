@@ -1086,6 +1086,299 @@ const rows = [
             "Check whether the multivariate omnibus is more appropriate than separate outcome models.",
         equivalence_option: "",
     },
+    {
+        id: "M06",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "2_or_gt2",
+        design: "within",
+        dv_parametric: "yes",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Repeated-measures MANOVA or multivariate linear mixed model",
+        what_it_does:
+            "Tests several continuous outcomes measured repeatedly on the same subjects. Doubly-multivariate RM-MANOVA analyses the outcomes jointly; a multivariate (or per-outcome) linear mixed model is usually preferable for unbalanced or incomplete data.",
+        r_code: 'library(afex)\n# long format: subject x condition x outcome\nfit <- mixed(value ~ outcome * condition + (1|subject), data = long)\nfit\n# classic doubly-multivariate RM-MANOVA: car::Anova(..., idata, idesign)',
+        python_code:
+            '# multivariate mixed models are limited in Python; fit per-outcome mixed models\nimport statsmodels.formula.api as smf\nfit = smf.mixedlm("y1 ~ condition", data=df, groups=df["subject"]).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multivariate multilevel model",
+        bayes_r_code:
+            "library(brms)\nbrm(mvbind(y1, y2) ~ condition + (1|subject), data = df)",
+        bayes_python_code:
+            'import bambi as bmb\n# fit per-outcome multilevel models\nmodel = bmb.Model("y1 ~ condition + (1|subject)", df)\nidata = model.fit()',
+        effect_sizes:
+            "multivariate eta^2 (Pillai-based); per-outcome partial eta^2 / R^2",
+        follow_up_questions:
+            "Check multivariate normality and sphericity for RM-MANOVA; prefer a mixed model with incomplete or unbalanced data. Decide a priori whether outcomes are analysed jointly or per outcome with multiplicity control.",
+        equivalence_option:
+            "Define equivalence per outcome with multiplicity-aware bounds.",
+    },
+    {
+        id: "M07",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "2_or_gt2",
+        design: "within",
+        dv_parametric: "no",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Distance-based PERMANOVA with restricted (within-subject) permutations",
+        what_it_does:
+            "Tests multivariate differences across repeated conditions without distributional assumptions, permuting within subjects (blocks) so the repeated-measures structure is respected.",
+        r_code: 'library(vegan)\n# D = dissimilarity matrix of the multivariate outcomes\nperm <- how(blocks = df$subject)\nadonis2(D ~ condition, data = df, permutations = perm)',
+        python_code:
+            '# restricted permutations are not supported by scikit-bio; use R (vegan::adonis2 with blocks)',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "R^2 from the PERMANOVA table",
+        follow_up_questions:
+            "Restrict permutations to within subject (blocks) so the repeated structure is respected; check multivariate dispersion (vegan::betadisper) because PERMANOVA can confound location and dispersion.",
+        equivalence_option: "",
+    },
+    {
+        id: "M08",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "discrete",
+        iv_levels: "2_or_gt2",
+        design: "within",
+        dv_parametric: "yes",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Factorial repeated-measures MANOVA or multivariate linear mixed model",
+        what_it_does:
+            "Extends repeated-measures MANOVA to two or more within-subject factors on several continuous outcomes; a multivariate or per-outcome linear mixed model is preferable when data are unbalanced or incomplete.",
+        r_code: 'library(afex)\nfit <- mixed(value ~ outcome * facA * facB + (1|subject), data = long)\nfit',
+        python_code:
+            '# fit per-outcome mixed models\nimport statsmodels.formula.api as smf\nfit = smf.mixedlm("y1 ~ facA * facB", data=df, groups=df["subject"]).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multivariate multilevel model",
+        bayes_r_code:
+            "library(brms)\nbrm(mvbind(y1, y2) ~ facA * facB + (1|subject), data = df)",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y1 ~ facA * facB + (1|subject)", df)\nidata = model.fit()',
+        effect_sizes:
+            "multivariate eta^2 (Pillai-based); per-outcome partial eta^2 / generalized eta^2",
+        follow_up_questions:
+            "Check sphericity (GG/HF) for RM-MANOVA factors; prefer a mixed model for unbalanced or missing data and to model the covariance structure explicitly.",
+        equivalence_option:
+            "Define equivalence per outcome with multiplicity-aware bounds.",
+    },
+    {
+        id: "M09",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "discrete",
+        iv_levels: "2_or_gt2",
+        design: "within",
+        dv_parametric: "no",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Distance-based factorial PERMANOVA with restricted permutations",
+        what_it_does:
+            "Distribution-free multivariate test for two or more within-subject factors, using permutations restricted within subjects to respect the repeated-measures design.",
+        r_code: 'library(vegan)\nperm <- how(blocks = df$subject)\nadonis2(D ~ facA * facB, data = df, permutations = perm)',
+        python_code:
+            '# restricted permutations are not supported by scikit-bio; use R (vegan::adonis2 with blocks)',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "R^2 per term from the PERMANOVA table",
+        follow_up_questions:
+            "Use restricted (within-subject) permutations; check multivariate dispersion with betadisper before interpreting location effects.",
+        equivalence_option: "",
+    },
+    {
+        id: "M10",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "discrete",
+        iv_levels: "2_or_gt2",
+        design: "both",
+        dv_parametric: "yes",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Multivariate linear mixed model (mixed multivariate design)",
+        what_it_does:
+            "Handles several continuous outcomes in a mixed design with both between- and within-subject factors via a multivariate (or per-outcome) linear mixed model with random subject effects.",
+        r_code: 'library(afex)\nfit <- mixed(value ~ outcome * group * condition + (1|subject), data = long)\nfit',
+        python_code:
+            '# fit per-outcome mixed models\nimport statsmodels.formula.api as smf\nfit = smf.mixedlm("y1 ~ group * condition", data=df, groups=df["subject"]).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multivariate multilevel model",
+        bayes_r_code:
+            "library(brms)\nbrm(mvbind(y1, y2) ~ group * condition + (1|subject), data = df)",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y1 ~ group * condition + (1|subject)", df)\nidata = model.fit()',
+        effect_sizes:
+            "per-outcome partial eta^2; marginal / conditional R^2",
+        follow_up_questions:
+            "Specify the random-effects structure for the within factor; analyse outcomes jointly or per outcome with multiplicity control.",
+        equivalence_option:
+            "Define equivalence per outcome with multiplicity-aware bounds.",
+    },
+    {
+        id: "M11",
+        dv_count: "ge2",
+        dv_kind: "continuous",
+        iv_count: "ge2",
+        iv_kind: "discrete",
+        iv_levels: "2_or_gt2",
+        design: "both",
+        dv_parametric: "no",
+        dv_subtype: "",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Distance-based factorial PERMANOVA with restricted permutations (mixed design)",
+        what_it_does:
+            "Distribution-free multivariate test for a mixed design with both between- and within-subject factors, permuting within subjects (blocks) for the repeated factor.",
+        r_code: 'library(vegan)\nperm <- how(blocks = df$subject)\nadonis2(D ~ group * condition, data = df, permutations = perm)',
+        python_code:
+            '# restricted permutations are not supported by scikit-bio; use R (vegan::adonis2 with blocks)',
+        bayes_test: "",
+        bayes_r_code: "",
+        bayes_python_code: "",
+        effect_sizes: "R^2 per term from the PERMANOVA table",
+        follow_up_questions:
+            "Restrict permutations for the within factor; check multivariate dispersion (betadisper) before interpreting group or condition effects.",
+        equivalence_option: "",
+    },
+    {
+        id: "D10",
+        dv_count: "1",
+        dv_kind: "discrete",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "2",
+        design: "within",
+        dv_parametric: "",
+        dv_subtype: "ordinal",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Wilcoxon signed-rank test or cumulative link mixed model (CLMM)",
+        what_it_does:
+            "Compares an ordinal outcome between two conditions measured on the same subjects. The Wilcoxon signed-rank test is the simple paired option; a cumulative link mixed model (CLMM) models the ordinal outcome directly with a random subject effect.",
+        r_code: 'library(ordinal)\nfit <- clmm(ordered(y) ~ condition + (1|subject), data = df)\nsummary(fit)\n# simple paired alternative:\n# wilcox.test(y ~ condition, data = df, paired = TRUE)',
+        python_code:
+            '# CLMM has no standard Python implementation; use R (ordinal::clmm).\nfrom scipy.stats import wilcoxon\nwilcoxon(wide["c1"], wide["c2"])  # simple paired alternative',
+        bayes_test: "Bayesian ordinal multilevel model",
+        bayes_r_code:
+            "library(brms)\nbrm(y ~ condition + (1|subject), data = df, family = cumulative())",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y ~ condition + (1|subject)", df, family="cumulative")\nidata = model.fit()',
+        effect_sizes:
+            "matched rank-biserial r (Wilcoxon); odds ratios (CLMM)",
+        follow_up_questions:
+            "Use the signed-rank test for a quick two-condition comparison; prefer CLMM for covariates, more conditions, or to model the ordinal structure explicitly.",
+        equivalence_option:
+            "TOST on the rank-based effect or on CLMM thresholds.",
+    },
+    {
+        id: "D10b",
+        dv_count: "1",
+        dv_kind: "discrete",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "gt2",
+        design: "within",
+        dv_parametric: "",
+        dv_subtype: "ordinal",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Cumulative link mixed model (CLMM); Friedman test as a rank-based alternative",
+        what_it_does:
+            "Compares an ordinal outcome across more than two conditions on the same subjects. A CLMM models the ordinal outcome with a random subject effect; the Friedman test is a simpler rank-based omnibus alternative.",
+        r_code: 'library(ordinal)\nfit <- clmm(ordered(y) ~ condition + (1|subject), data = df)\nsummary(fit)\n# rank-based alternative:\n# rstatix::friedman_test(y ~ condition | subject, data = df)',
+        python_code:
+            '# CLMM: use R (ordinal::clmm)\nfrom scipy.stats import friedmanchisquare\nfriedmanchisquare(*[g["y"].values for _, g in df.groupby("condition")])',
+        bayes_test: "Bayesian ordinal multilevel model",
+        bayes_r_code:
+            "library(brms)\nbrm(y ~ condition + (1|subject), data = df, family = cumulative())",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y ~ condition + (1|subject)", df, family="cumulative")\nidata = model.fit()',
+        effect_sizes:
+            "Kendall's W (Friedman); odds ratios (CLMM)",
+        follow_up_questions:
+            "Prefer CLMM for covariates or to model the ordinal scale; use Friedman for a quick omnibus check, with post-hoc signed-rank comparisons and multiplicity control.",
+        equivalence_option: "",
+    },
+    {
+        id: "D11",
+        dv_count: "1",
+        dv_kind: "discrete",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "2",
+        design: "within",
+        dv_parametric: "",
+        dv_subtype: "count",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Repeated-measures count model (Poisson or negative-binomial GLMM)",
+        what_it_does:
+            "Compares a count outcome between two conditions on the same subjects, modelling the repeated counts with a Poisson or negative-binomial GLMM (random subject effect). Switch to negative binomial under overdispersion.",
+        r_code: 'library(lme4)\nfit <- glmer(y ~ condition + (1|subject), data = df, family = poisson)\nsummary(fit)\n# overdispersion -> negative binomial:\n# fit_nb <- glmer.nb(y ~ condition + (1|subject), data = df)',
+        python_code:
+            'import statsmodels.formula.api as smf\nimport statsmodels.api as sm\nfit = smf.gee("y ~ condition", "subject", data=df, family=sm.families.Poisson()).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multilevel count model",
+        bayes_r_code:
+            "library(rstanarm)\nstan_glmer(y ~ condition + (1|subject), data = df, family = poisson())",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y ~ condition + (1|subject)", df, family="poisson")\nidata = model.fit()',
+        effect_sizes: "incidence rate ratios",
+        follow_up_questions:
+            "Check overdispersion and zero inflation; use negative binomial or a zero-inflated model if needed. Exact paired options (e.g. McNemar) apply to binary, not count, outcomes.",
+        equivalence_option: "Define equivalence on the rate ratio.",
+    },
+    {
+        id: "D11b",
+        dv_count: "1",
+        dv_kind: "discrete",
+        iv_count: "1",
+        iv_kind: "discrete",
+        iv_levels: "gt2",
+        design: "within",
+        dv_parametric: "",
+        dv_subtype: "count",
+        route: "",
+        status: "resolved",
+        recommended_test:
+            "Repeated-measures count model (Poisson or negative-binomial GLMM)",
+        what_it_does:
+            "Compares a count outcome across more than two conditions on the same subjects, modelling the repeated counts with a Poisson or negative-binomial GLMM (random subject effect).",
+        r_code: 'library(lme4)\nfit <- glmer(y ~ condition + (1|subject), data = df, family = poisson)\nsummary(fit)\n# overdispersion -> negative binomial:\n# fit_nb <- glmer.nb(y ~ condition + (1|subject), data = df)',
+        python_code:
+            'import statsmodels.formula.api as smf\nimport statsmodels.api as sm\nfit = smf.gee("y ~ condition", "subject", data=df, family=sm.families.Poisson()).fit()\nprint(fit.summary())',
+        bayes_test: "Bayesian multilevel count model",
+        bayes_r_code:
+            "library(rstanarm)\nstan_glmer(y ~ condition + (1|subject), data = df, family = poisson())",
+        bayes_python_code:
+            'import bambi as bmb\nmodel = bmb.Model("y ~ condition + (1|subject)", df, family="poisson")\nidata = model.fit()',
+        effect_sizes: "incidence rate ratios",
+        follow_up_questions:
+            "Check overdispersion and zero inflation; localise differences with planned contrasts and multiplicity correction if the omnibus is significant.",
+        equivalence_option: "Define equivalence on the rate ratio.",
+    },
 ];
 
 /* =============================
