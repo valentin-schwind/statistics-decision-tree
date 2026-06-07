@@ -5318,29 +5318,30 @@ function codeCard(title, code, extra) {
         '<span>' + escapeHtml(title) + '</span>';
     div.appendChild(heading);
 
-    const mainSection = document.createElement("div");
-    mainSection.className = "code-card-section";
-    const mainLabel = document.createElement("h4");
-    mainLabel.textContent = "Main code";
-    mainSection.appendChild(mainLabel);
-    const mainCode = document.createElement("pre");
-    mainCode.className = "mono code-block";
-    mainCode.innerHTML = renderCodeMarkup(code || "# not available", language);
-    mainSection.appendChild(mainCode);
-    div.appendChild(mainSection);
+    const addSection = (label, codeText) => {
+        const section = document.createElement("div");
+        section.className = "code-card-section";
+        const h = document.createElement("h4");
+        h.textContent = label;
+        section.appendChild(h);
+        const pre = document.createElement("pre");
+        pre.className = "mono code-block";
+        pre.innerHTML = renderCodeMarkup(codeText || "# not available", language);
+        section.appendChild(pre);
+        div.appendChild(section);
+    };
 
-    if (extra) {
-        const extraSection = document.createElement("div");
-        extraSection.className = "code-card-section";
-        const extraLabel = document.createElement("h4");
-        extraLabel.textContent = "Effect sizes";
-        extraSection.appendChild(extraLabel);
-        const extraCode = document.createElement("pre");
-        extraCode.className = "mono code-block";
-        extraCode.innerHTML = renderCodeMarkup(extra, language);
-        extraSection.appendChild(extraCode);
-        div.appendChild(extraSection);
+    addSection("Main code", code || "# not available");
+
+    // extra: a string (legacy "Effect sizes" section) or an array of {label, code}
+    let sections = [];
+    if (Array.isArray(extra)) {
+        sections = extra.filter((s) => s && s.code);
+    } else if (extra) {
+        sections = [{ label: "Effect sizes", code: extra }];
     }
+    sections.forEach((s) => addSection(s.label, s.code));
+
     return div;
 }
 
@@ -7195,36 +7196,16 @@ function renderResolvedTestPanel(row) {
     const showEffectCodeExamples = !hasOnlyEffectNote(effectNames);
 
     const intro = document.createElement("div");
-    intro.className = "unified-intro";
+    intro.className = "unified-card unified-intro";
     intro.innerHTML =
         '<div class="section-kicker">Primary test</div>' +
         '<h3>' + escapeHtml(row.recommended_test) + '</h3>' +
-        '<p>' + escapeHtml(row.what_it_does) + '</p>';
-    panel.appendChild(intro);
-
-    const topGrid = document.createElement("div");
-    topGrid.className = "unified-grid";
-
-    const primaryCard = document.createElement("div");
-    primaryCard.className = "unified-card";
-    primaryCard.innerHTML =
-        '<h3>Interpretation focus</h3>' +
-        '<p>' + escapeHtml(interpretationHint(row.recommended_test)) + '</p>';
-    topGrid.appendChild(primaryCard);
-
-    const optionalCard = document.createElement("div");
-    optionalCard.className = "unified-card";
-    optionalCard.innerHTML =
-        '<h3>Optional checks</h3>' +
+        '<p>' + escapeHtml(row.what_it_does) + '</p>' +
+        '<h4 class="unified-subhead">Interpretation focus</h4>' +
+        '<p>' + escapeHtml(interpretationHint(row.recommended_test)) + '</p>' +
+        '<h4 class="unified-subhead">Optional checks</h4>' +
         '<p>' + escapeHtml(row.follow_up_questions || 'No extra checks stored for this row.') + '</p>';
-    topGrid.appendChild(optionalCard);
-    panel.appendChild(topGrid);
-
-    panel.appendChild(
-        createDecisionBanner(
-            'Use this test when the answers in the tree match this path.'
-        )
-    );
+    panel.appendChild(intro);
 
     const effectCard = document.createElement("div");
     effectCard.className = "unified-card";
@@ -7243,44 +7224,26 @@ function renderResolvedTestPanel(row) {
     extraCard.appendChild(extraGrid);
     panel.appendChild(extraCard);
 
-    const codeGrid = document.createElement("div");
-    codeGrid.className = "code-grid";
-    codeGrid.appendChild(
-        codeCard(
-            "R",
-            row.r_code || "# not available",
-            showEffectCodeExamples ? eff.r : "",
-        ),
-    );
-    codeGrid.appendChild(
-        codeCard(
-            "Python",
-            row.python_code || "# not available",
-            showEffectCodeExamples ? eff.py : "",
-        ),
-    );
-    panel.appendChild(codeGrid);
-
-    // Secondary code (Bayesian / equivalence) is collapsed by default to keep the result lean.
-    const secondaryGrid = document.createElement("div");
-    secondaryGrid.className = "code-grid";
+    // Build the R and Python boxes with effect-size, Bayesian and equivalence
+    // code as inline sections (no separate drop-down).
+    const rExtras = [];
+    const pyExtras = [];
+    if (showEffectCodeExamples && eff.r) rExtras.push({ label: "Effect sizes", code: eff.r });
+    if (showEffectCodeExamples && eff.py) pyExtras.push({ label: "Effect sizes", code: eff.py });
     if (row.bayes_test) {
-        secondaryGrid.appendChild(codeCard("Bayes R", row.bayes_r_code || "# not available", ""));
-        secondaryGrid.appendChild(codeCard("Bayes Python", row.bayes_python_code || "# not available", ""));
+        rExtras.push({ label: "Bayesian", code: row.bayes_r_code || "# not available" });
+        pyExtras.push({ label: "Bayesian", code: row.bayes_python_code || "# not available" });
     }
     if (hasActionableEquivalence(row)) {
-        secondaryGrid.appendChild(codeCard("Equivalence in R", getEquivalenceRCode(row) || "# not available", ""));
-        secondaryGrid.appendChild(codeCard("Equivalence in Python", getEquivalencePythonCode(row) || "# not available", ""));
+        rExtras.push({ label: "Equivalence", code: getEquivalenceRCode(row) || "# not available" });
+        pyExtras.push({ label: "Equivalence", code: getEquivalencePythonCode(row) || "# not available" });
     }
-    if (secondaryGrid.children.length) {
-        const codeExtra = document.createElement("details");
-        codeExtra.className = "code-extra";
-        const codeSummary = document.createElement("summary");
-        codeSummary.textContent = "Bayesian & equivalence code";
-        codeExtra.appendChild(codeSummary);
-        codeExtra.appendChild(secondaryGrid);
-        panel.appendChild(codeExtra);
-    }
+
+    const codeGrid = document.createElement("div");
+    codeGrid.className = "code-grid";
+    codeGrid.appendChild(codeCard("R", row.r_code || "# not available", rExtras));
+    codeGrid.appendChild(codeCard("Python", row.python_code || "# not available", pyExtras));
+    panel.appendChild(codeGrid);
 
     panel.appendChild(
         renderInterpretationPanel({
