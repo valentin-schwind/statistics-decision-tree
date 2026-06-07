@@ -7209,7 +7209,9 @@ function renderResolvedTestPanel(row) {
 
     const effectCard = document.createElement("div");
     effectCard.className = "unified-card";
-    effectCard.innerHTML = '<h3>Effect sizes</h3>';
+    effectCard.innerHTML =
+        '<h3>Effect sizes</h3>' +
+        '<p class="card-lead">A significant <em>p</em>-value only tells you whether an effect is present (below or above your alpha, usually .05). The effect size adds what the <em>p</em>-value cannot: how large that effect is — its magnitude and practical relevance.</p>';
     effectCard.appendChild(createEffectNameList(effectNames, "row"));
     panel.appendChild(effectCard);
 

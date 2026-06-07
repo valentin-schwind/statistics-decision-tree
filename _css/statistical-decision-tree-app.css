@@ -890,6 +890,13 @@ hr.sep {
     line-height: 1.5;
 }
 
+.unified-card .card-lead {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
 .selected-detail-box {
     background: #f8fafc;
     border: 1px solid #d8e0ea;
