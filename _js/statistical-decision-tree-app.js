@@ -3764,8 +3764,8 @@ function drawTree() {
         );
         const displayNodeLabel = formatStats(node.label);
         const txt =
-            displayNodeLabel.length > (isResult ? 30 : 17)
-                ? displayNodeLabel.slice(0, isResult ? 29 : 16) +
+            displayNodeLabel.length > (isResult ? 26 : 14)
+                ? displayNodeLabel.slice(0, isResult ? 25 : 13) +
                 "…"
                 : displayNodeLabel;
         label.textContent = txt;
